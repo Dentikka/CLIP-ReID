@@ -43,7 +43,8 @@ if __name__ == '__main__':
     set_seed(cfg.SOLVER.SEED)
 
     if cfg.MODEL.DIST_TRAIN:
-        torch.cuda.set_device(args.local_rank)
+        raise NotImplementedError
+        # torch.cuda.set_device(args.local_rank)
 
     output_dir = cfg.OUTPUT_DIR
     if output_dir and not os.path.exists(output_dir):
@@ -61,7 +62,8 @@ if __name__ == '__main__':
     logger.info("Running with config:\n{}".format(cfg))
 
     if cfg.MODEL.DIST_TRAIN:
-        torch.distributed.init_process_group(backend='nccl', init_method='env://')
+        raise NotImplementedError
+        # torch.distributed.init_process_group(backend='nccl', init_method='env://')
 
     train_loader_stage2, train_loader_stage1, val_loader, num_query, num_classes, camera_num, view_num = make_dataloader(cfg)
 
@@ -73,13 +75,16 @@ if __name__ == '__main__':
     scheduler_1stage = create_scheduler(optimizer_1stage, num_epochs = cfg.SOLVER.STAGE1.MAX_EPOCHS, lr_min = cfg.SOLVER.STAGE1.LR_MIN, \
                         warmup_lr_init = cfg.SOLVER.STAGE1.WARMUP_LR_INIT, warmup_t = cfg.SOLVER.STAGE1.WARMUP_EPOCHS, noise_range = None)
 
+    device = f"cuda:{cfg.MODEL.DEVICE_ID}" if torch.cuda.is_available() else "cpu"
+    print(f"Training on {device}")
+
     do_train_stage1(
         cfg,
         model,
         train_loader_stage1,
         optimizer_1stage,
         scheduler_1stage,
-        args.local_rank
+        device
     )
 
     optimizer_2stage, optimizer_center_2stage = make_optimizer_2stage(cfg, model, center_criterion)
@@ -96,5 +101,6 @@ if __name__ == '__main__':
         optimizer_center_2stage,
         scheduler_2stage,
         loss_func,
-        num_query, args.local_rank
+        num_query,
+        device
     )

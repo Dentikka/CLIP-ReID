@@ -19,26 +19,28 @@ def do_train_stage2(cfg,
              optimizer_center,
              scheduler,
              loss_fn,
-             num_query, local_rank):
+             num_query):
     log_period = cfg.SOLVER.STAGE2.LOG_PERIOD
     checkpoint_period = cfg.SOLVER.STAGE2.CHECKPOINT_PERIOD
     eval_period = cfg.SOLVER.STAGE2.EVAL_PERIOD
     instance = cfg.DATALOADER.NUM_INSTANCE
 
-    device = "cuda"
+    device = f"cuda:{cfg.MODEL.DEVICE_ID}" if torch.cuda.is_available() else "cpu"
     epochs = cfg.SOLVER.STAGE2.MAX_EPOCHS
 
     logger = logging.getLogger("transreid.train")
     logger.info('start training')
-    _LOCAL_PROCESS_GROUP = None
-    if device:
-        model.to(local_rank)
-        if torch.cuda.device_count() > 1:
-            print('Using {} GPUs for training'.format(torch.cuda.device_count()))
-            model = nn.DataParallel(model)  
-            num_classes = model.module.num_classes
-        else:
-            num_classes = model.num_classes
+    # _LOCAL_PROCESS_GROUP = None
+    if cfg.MODEL.DIST_TRAIN:
+        raise NotImplementedError
+
+    model.to(device)
+    # if torch.cuda.device_count() > 1:
+    #     print('Using {} GPUs for training'.format(torch.cuda.device_count()))
+    #     model = nn.DataParallel(model)
+    #     num_classes = model.module.num_classes
+    # else:
+    num_classes = model.num_classes
 
     loss_meter = AverageMeter()
     acc_meter = AverageMeter()
@@ -68,7 +70,7 @@ def do_train_stage2(cfg,
             with amp.autocast(enabled=True):
                 text_feature = model(label = l_list, get_text = True)
             text_features.append(text_feature.cpu())
-        text_features = torch.cat(text_features, 0).cuda()
+        text_features = torch.cat(text_features, 0).to(device)
 
     for epoch in range(1, epochs + 1):
         start_time = time.time()
@@ -113,7 +115,7 @@ def do_train_stage2(cfg,
             loss_meter.update(loss.item(), img.shape[0])
             acc_meter.update(acc, 1)
 
-            torch.cuda.synchronize()
+            # torch.cuda.synchronize()
             if (n_iter + 1) % log_period == 0:
                 logger.info("Epoch[{}] Iteration[{}/{}] Loss: {:.3f}, Acc: {:.3f}, Base Lr: {:.2e}"
                             .format(epoch, (n_iter + 1), len(train_loader_stage2),
@@ -190,7 +192,7 @@ def do_inference(cfg,
                  model,
                  val_loader,
                  num_query):
-    device = "cuda"
+    device = f"cuda:{cfg.MODEL.DEVICE_ID}" if torch.cuda.is_available() else "cpu"
     logger = logging.getLogger("transreid.test")
     logger.info("Enter inferencing")
 
@@ -198,11 +200,12 @@ def do_inference(cfg,
 
     evaluator.reset()
 
-    if device:
-        if torch.cuda.device_count() > 1:
-            print('Using {} GPUs for inference'.format(torch.cuda.device_count()))
-            model = nn.DataParallel(model)
-        model.to(device)
+    if cfg.MODEL.DIST_TRAIN:
+        raise NotImplementedError
+    # if torch.cuda.device_count() > 1:
+    #     print('Using {} GPUs for inference'.format(torch.cuda.device_count()))
+    #     model = nn.DataParallel(model)
+    model.to(device)
 
     model.eval()
     img_path_list = []

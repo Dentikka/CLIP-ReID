@@ -22,17 +22,18 @@ def do_train(cfg,
     checkpoint_period = cfg.SOLVER.CHECKPOINT_PERIOD
     eval_period = cfg.SOLVER.EVAL_PERIOD
 
-    device = "cuda"
+    device = f"cuda:{cfg.MODEL.DEVICE_ID}" if torch.cuda.is_available() else "cpu"
     epochs = cfg.SOLVER.MAX_EPOCHS
 
     logger = logging.getLogger("transreid.train")
     logger.info('start training')
     _LOCAL_PROCESS_GROUP = None
-    if device:
-        model.to(local_rank)
-        if torch.cuda.device_count() > 1:
-            print('Using {} GPUs for training'.format(torch.cuda.device_count()))
-            model = nn.DataParallel(model)  
+    if cfg.MODEL.DIST_TRAIN:
+        raise NotImplementedError
+    # if torch.cuda.device_count() > 1:
+    #     print('Using {} GPUs for inference'.format(torch.cuda.device_count()))
+    #     model = nn.DataParallel(model)
+    model.to(device) 
 
     loss_meter = AverageMeter()
     acc_meter = AverageMeter()
@@ -90,7 +91,7 @@ def do_train(cfg,
             loss_meter.update(loss.item(), img.shape[0])
             acc_meter.update(acc, 1)
 
-            torch.cuda.synchronize()
+            # torch.cuda.synchronize()
             if (n_iter + 1) % log_period == 0:
                 logger.info("Epoch[{}] Iteration[{}/{}] Loss: {:.3f}, Acc: {:.3f}, Base Lr: {:.2e}"
                             .format(epoch, (n_iter + 1), len(train_loader),
@@ -167,7 +168,8 @@ def do_inference(cfg,
                  model,
                  val_loader,
                  num_query):
-    device = "cuda"
+    device = f"cuda:{cfg.MODEL.DEVICE_ID}" if torch.cuda.is_available() else "cpu"
+    
     logger = logging.getLogger("transreid.test")
     logger.info("Enter inferencing")
 
@@ -175,11 +177,12 @@ def do_inference(cfg,
 
     evaluator.reset()
 
-    if device:
-        if torch.cuda.device_count() > 1:
-            print('Using {} GPUs for inference'.format(torch.cuda.device_count()))
-            model = nn.DataParallel(model)
-        model.to(device)
+    if cfg.MODEL.DIST_TRAIN:
+        raise NotImplementedError
+    # if torch.cuda.device_count() > 1:
+    #     print('Using {} GPUs for inference'.format(torch.cuda.device_count()))
+    #     model = nn.DataParallel(model)
+    model.to(device)
 
     model.eval()
     img_path_list = []

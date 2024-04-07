@@ -13,21 +13,22 @@ def do_train_stage1(cfg,
              model,
              train_loader_stage1,
              optimizer,
-             scheduler,
-             local_rank):
+             scheduler):
     checkpoint_period = cfg.SOLVER.STAGE1.CHECKPOINT_PERIOD
-    device = "cuda"
+    device = f"cuda:{cfg.MODEL.DEVICE_ID}" if torch.cuda.is_available() else "cpu"
     epochs = cfg.SOLVER.STAGE1.MAX_EPOCHS
     log_period = cfg.SOLVER.STAGE1.LOG_PERIOD 
 
     logger = logging.getLogger("transreid.train")
     logger.info('start training')
-    _LOCAL_PROCESS_GROUP = None
-    if device:
-        model.to(local_rank)
-        if torch.cuda.device_count() > 1:
-            print('Using {} GPUs for training'.format(torch.cuda.device_count()))
-            model = nn.DataParallel(model)  
+    # _LOCAL_PROCESS_GROUP = None
+    if cfg.MODEL.DIST_TRAIN:
+        raise NotImplementedError
+
+    model.to(device)
+    # if torch.cuda.device_count() > 1:
+    #     print('Using {} GPUs for training'.format(torch.cuda.device_count()))
+    #     model = nn.DataParallel(model)  
 
     loss_meter = AverageMeter()
     scaler = amp.GradScaler()
@@ -49,8 +50,8 @@ def do_train_stage1(cfg,
                 for i, img_feat in zip(target, image_feature):
                     labels.append(i)
                     image_features.append(img_feat.cpu())
-        labels_list = torch.stack(labels, dim=0).cuda() #N
-        image_features_list = torch.stack(image_features, dim=0).cuda()
+        labels_list = torch.stack(labels, dim=0).to(device) #N
+        image_features_list = torch.stack(image_features, dim=0).to(device)
 
         batch = cfg.SOLVER.STAGE1.IMS_PER_BATCH
         num_image = labels_list.shape[0]
@@ -86,7 +87,7 @@ def do_train_stage1(cfg,
 
             loss_meter.update(loss.item(), img.shape[0])
 
-            torch.cuda.synchronize()
+            # torch.cuda.synchronize()
             if (i + 1) % log_period == 0:
                 logger.info("Epoch[{}] Iteration[{}/{}] Loss: {:.3f}, Base Lr: {:.2e}"
                             .format(epoch, (i + 1), len(train_loader_stage1),

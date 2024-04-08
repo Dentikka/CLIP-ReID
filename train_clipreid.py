@@ -32,7 +32,7 @@ if __name__ == '__main__':
 
     parser.add_argument("opts", help="Modify config options using the command-line", default=None,
                         nargs=argparse.REMAINDER)
-    parser.add_argument("--local_rank", default=0, type=int)
+    # parser.add_argument("--local_rank", default=0, type=int)
     args = parser.parse_args()
 
     if args.config_file != "":

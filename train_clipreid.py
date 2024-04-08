@@ -14,6 +14,8 @@ import os
 import argparse
 from config import cfg
 
+os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+
 def set_seed(seed):
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)

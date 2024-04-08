@@ -66,8 +66,8 @@ TEST:
 
 DATASETS:
   NAMES: ('market1501')
-  ROOT_DIR: ('/home/shvejkinde/thesis/data')
-OUTPUT_DIR: '/home/shvejkinde/thesis/data/logs/clipreid/baseline_run_1'
+  ROOT_DIR: ('/home/denis/nkbtech/hdd/Datasets/Market-1501')
+OUTPUT_DIR: '/home/denis/nkbtech/hdd/denis/clipreid_runs/experiments/baseline_run_1'
 
 #   NAMES: ('dukemtmc')
 #   ROOT_DIR: ('')

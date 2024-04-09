@@ -9,6 +9,8 @@ import re
 
 import os.path as osp
 
+import pandas as pd
+
 from .bases import BaseImageDataset
 from collections import defaultdict
 import pickle
@@ -31,10 +33,12 @@ class Market1501(BaseImageDataset):
         self.train_dir = osp.join(self.dataset_dir, 'bounding_box_train')
         self.query_dir = osp.join(self.dataset_dir, 'query')
         self.gallery_dir = osp.join(self.dataset_dir, 'bounding_box_test')
+        self.attributes_train_path = osp.join(self.dataset_dir, 'attributes_train.csv')
 
         self._check_before_run()
         self.pid_begin = pid_begin
-        train = self._process_dir(self.train_dir, relabel=True)
+        self.attributes_train = pd.read_csv(self.attributes_train_path, index_col=0)
+        train = self._process_dir(self.train_dir, relabel=True, annos=self.attributes_train)
         query = self._process_dir(self.query_dir, relabel=False)
         gallery = self._process_dir(self.gallery_dir, relabel=False)
 
@@ -60,8 +64,10 @@ class Market1501(BaseImageDataset):
             raise RuntimeError("'{}' is not available".format(self.query_dir))
         if not osp.exists(self.gallery_dir):
             raise RuntimeError("'{}' is not available".format(self.gallery_dir))
+        if not osp.exists(self.attributes_train_path):
+            raise RuntimeError("'{}' is not available".format(self.attributes_train_path))
 
-    def _process_dir(self, dir_path, relabel=False):
+    def _process_dir(self, dir_path, relabel=False, annos=None):
         img_paths = glob.glob(osp.join(dir_path, '*.jpg'))
         pattern = re.compile(r'([-\d]+)_c(\d)')
 
@@ -71,6 +77,8 @@ class Market1501(BaseImageDataset):
             if pid == -1: continue  # junk images are just ignored
             pid_container.add(pid)
         pid2label = {pid: label for label, pid in enumerate(pid_container)}
+        if annos is not None and relabel:
+            annos = annos.rename(index=pid2label)
         dataset = []
         for img_path in sorted(img_paths):
             pid, camid = map(int, pattern.search(img_path).groups())
@@ -80,5 +88,8 @@ class Market1501(BaseImageDataset):
             camid -= 1  # index starts from 0
             if relabel: pid = pid2label[pid]
 
-            dataset.append((img_path, self.pid_begin + pid, camid, 0))
+            if annos is not None:
+                dataset.append((img_path, self.pid_begin + pid, camid, 0, annos.loc[pid].values))
+            else:
+                dataset.append((img_path, self.pid_begin + pid, camid, 0))
         return dataset

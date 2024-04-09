@@ -68,18 +68,25 @@ class BaseImageDataset(BaseDataset):
 
 
 class ImageDataset(Dataset):
-    def __init__(self, dataset, transform=None):
+    def __init__(self, dataset, has_annos=False, transform=None):
         self.dataset = dataset
+        self.has_annos = has_annos
         self.transform = transform
 
     def __len__(self):
         return len(self.dataset)
 
     def __getitem__(self, index):
-        img_path, pid, camid, trackid = self.dataset[index]
+        if self.has_annos:
+            img_path, pid, camid, trackid, attributes = self.dataset[index]
+        else:
+            img_path, pid, camid, trackid = self.dataset[index]
         img = read_image(img_path)
 
         if self.transform is not None:
             img = self.transform(img)
 
-        return img, pid, camid, trackid, img_path.split('/')[-1]
+        if self.has_annos:
+            return img, pid, camid, trackid, attributes, img_path.split('/')[-1]
+        else:
+            return img, pid, camid, trackid, img_path.split('/')[-1]

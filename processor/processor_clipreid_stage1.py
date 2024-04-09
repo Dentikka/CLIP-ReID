@@ -78,8 +78,8 @@ def do_train_stage1(cfg,
             attributes = attributes_list[b_list]
             with amp.autocast(enabled=True):
                 text_features = model(label = target, get_text = True)
-            loss_i2t = xent(image_features, text_features, attributes, target, target)
-            loss_t2i = xent(text_features, image_features, attributes, target, target)
+            loss_i2t = xent(image_features, text_features, attributes, attributes, target, target)
+            loss_t2i = xent(text_features, image_features, attributes, attributes, target, target)
 
             loss = loss_i2t + loss_t2i
 

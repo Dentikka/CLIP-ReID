@@ -38,6 +38,7 @@ class Market1501(BaseImageDataset):
         self._check_before_run()
         self.pid_begin = pid_begin
         self.attributes_train = pd.read_csv(self.attributes_train_path, index_col=0)
+        self.num_attributes = len(self.attributes_train.columns)
         train = self._process_dir(self.train_dir, relabel=True, annos=self.attributes_train)
         query = self._process_dir(self.query_dir, relabel=False)
         gallery = self._process_dir(self.gallery_dir, relabel=False)

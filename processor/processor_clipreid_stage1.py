@@ -40,17 +40,20 @@ def do_train_stage1(cfg,
     logger.info("model: {}".format(model))
     image_features = []
     labels = []
+    attributes = []
     with torch.no_grad():
-        for n_iter, (img, vid, target_cam, target_view) in enumerate(train_loader_stage1):
+        for n_iter, (img, vid, target_cam, target_view, attribute) in enumerate(train_loader_stage1):
             img = img.to(device)
             target = vid.to(device)
             with amp.autocast(enabled=True):
                 image_feature = model(img, target, get_image = True)
-                for i, img_feat in zip(target, image_feature):
+                for i, img_feat in zip(target, image_feature, attribute):
                     labels.append(i)
                     image_features.append(img_feat.cpu())
+                    attributes.append(attribute)
         labels_list = torch.stack(labels, dim=0).cuda() #N
         image_features_list = torch.stack(image_features, dim=0).cuda()
+        attributes_list = torch.stack(attributes, dim=0).cuda()
 
         batch = cfg.SOLVER.STAGE1.IMS_PER_BATCH
         num_image = labels_list.shape[0]
@@ -72,10 +75,11 @@ def do_train_stage1(cfg,
             
             target = labels_list[b_list]
             image_features = image_features_list[b_list]
+            attributes = attributes_list[b_list]
             with amp.autocast(enabled=True):
                 text_features = model(label = target, get_text = True)
-            loss_i2t = xent(image_features, text_features, target, target)
-            loss_t2i = xent(text_features, image_features, target, target)
+            loss_i2t = xent(image_features, text_features, attributes, target, target)
+            loss_t2i = xent(text_features, image_features, attributes, target, target)
 
             loss = loss_i2t + loss_t2i
 

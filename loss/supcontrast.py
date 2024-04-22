@@ -19,7 +19,7 @@ class SupConLoss(nn.Module):
         identity_mask = torch.eq(t_label.unsqueeze(1).expand(batch_size, batch_size_N), \
             i_targets.unsqueeze(0).expand(batch_size,batch_size_N)).float().to(self.device) 
         attribute_mask = torch.eq(t_attributes.unsqueeze(1).expand(batch_size, batch_size_N, -1), \
-            i_attributes.unsqueeze(0).expand(batch_size,batch_size_N, -1)).mean(dim=2).float().to(self.device)
+            i_attributes.unsqueeze(0).expand(batch_size,batch_size_N, -1)).float().mean(dim=2).to(self.device)
         mask = (identity_mask + attribute_mask) * 0.5
 
         logits = torch.div(torch.matmul(text_features, image_features.T),self.temperature)

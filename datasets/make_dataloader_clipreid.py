@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 import torchvision.transforms as T
 from torch.utils.data import DataLoader
@@ -31,7 +32,7 @@ def train_collate_fn(batch):
     pids = torch.tensor(pids, dtype=torch.int64)
     viewids = torch.tensor(viewids, dtype=torch.int64)
     camids = torch.tensor(camids, dtype=torch.int64)
-    attributes = torch.tensor(attributes, dtype=torch.int64)
+    attributes = torch.tensor(np.array(attributes), dtype=torch.int64)
     return torch.stack(imgs, dim=0), pids, camids, viewids, attributes
 
 def val_collate_fn(batch):

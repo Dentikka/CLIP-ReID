@@ -28,9 +28,13 @@ class BaseDataset(object):
     Base class of reid dataset
     """
 
-    def get_imagedata_info(self, data):
+    def get_imagedata_info(self, data, has_annos=False):
         pids, cams, tracks = [], [], []
-        for _, pid, camid, trackid in data:
+        for entry in data:
+            if not has_annos:
+                _, pid, camid, trackid = entry
+            else:
+                _, pid, camid, trackid, _ = entry
             pids += [pid]
             cams += [camid]
             tracks += [trackid]
@@ -53,7 +57,7 @@ class BaseImageDataset(BaseDataset):
     """
 
     def print_dataset_statistics(self, train, query, gallery):
-        num_train_pids, num_train_imgs, num_train_cams, num_train_views = self.get_imagedata_info(train)
+        num_train_pids, num_train_imgs, num_train_cams, num_train_views = self.get_imagedata_info(train, has_annos=True)
         num_query_pids, num_query_imgs, num_query_cams, num_train_views = self.get_imagedata_info(query)
         num_gallery_pids, num_gallery_imgs, num_gallery_cams, num_train_views = self.get_imagedata_info(gallery)
 

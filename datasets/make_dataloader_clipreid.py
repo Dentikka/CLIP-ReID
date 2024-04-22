@@ -32,7 +32,7 @@ def train_collate_fn(batch):
     viewids = torch.tensor(viewids, dtype=torch.int64)
     camids = torch.tensor(camids, dtype=torch.int64)
     attributes = torch.tensor(attributes, dtype=torch.int64)
-    return torch.stack(imgs, dim=0), pids, camids, viewids, attributes,
+    return torch.stack(imgs, dim=0), pids, camids, viewids, attributes
 
 def val_collate_fn(batch):
     imgs, pids, camids, viewids, img_paths = zip(*batch)
@@ -63,7 +63,7 @@ def make_dataloader(cfg):
     dataset = __factory[cfg.DATASETS.NAMES](root=cfg.DATASETS.ROOT_DIR)
     
     train_set = ImageDataset(dataset.train, has_annos=True, transform=train_transforms)
-    train_set_normal = ImageDataset(dataset.train, transform=val_transforms)
+    train_set_normal = ImageDataset(dataset.train, has_annos=True, transform=val_transforms)
     num_classes = dataset.num_train_pids
     cam_num = dataset.num_train_cams
     view_num = dataset.num_train_vids

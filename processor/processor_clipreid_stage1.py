@@ -38,8 +38,8 @@ def do_train_stage1(cfg,
     from datetime import timedelta
     all_start_time = time.monotonic()
     logger.info("model: {}".format(model))
-    image_features = []
     labels = []
+    image_features = []
     attributes = []
     with torch.no_grad():
         for n_iter, (img, vid, target_cam, target_view, attribute) in enumerate(train_loader_stage1):
@@ -47,10 +47,10 @@ def do_train_stage1(cfg,
             target = vid.to(device)
             with amp.autocast(enabled=True):
                 image_feature = model(img, target, get_image = True)
-                for i, img_feat in zip(target, image_feature, attribute):
+                for i, img_feat, att in zip(target, image_feature, attribute):
                     labels.append(i)
                     image_features.append(img_feat.cpu())
-                    attributes.append(attribute)
+                    attributes.append(att)
         labels_list = torch.stack(labels, dim=0).cuda() #N
         image_features_list = torch.stack(image_features, dim=0).cuda()
         attributes_list = torch.stack(attributes, dim=0).cuda()

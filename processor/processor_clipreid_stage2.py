@@ -79,7 +79,7 @@ def do_train_stage2(cfg,
         scheduler.step()
 
         model.train()
-        for n_iter, (img, vid, target_cam, target_view) in enumerate(train_loader_stage2):
+        for n_iter, (img, vid, target_cam, target_view, attribute) in enumerate(train_loader_stage2):
             optimizer.zero_grad()
             optimizer_center.zero_grad()
             img = img.to(device)

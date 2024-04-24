@@ -37,8 +37,8 @@ class Market1501(BaseImageDataset):
 
         self._check_before_run()
         self.pid_begin = pid_begin
-        self.attributes_train = pd.read_csv(self.attributes_train_path, index_col=0)
-        train = self._process_dir(self.train_dir, relabel=True, annos=self.attributes_train)
+        attributes_train = pd.read_csv(self.attributes_train_path, index_col=0)
+        train, attributes_train = self._process_dir(self.train_dir, relabel=True, annos=attributes_train)
         query = self._process_dir(self.query_dir, relabel=False)
         gallery = self._process_dir(self.gallery_dir, relabel=False)
 
@@ -46,6 +46,7 @@ class Market1501(BaseImageDataset):
             print("=> Market1501 loaded")
             self.print_dataset_statistics(train, query, gallery)
 
+        self.attributes_train = attributes_train
         self.train = train
         self.query = query
         self.gallery = gallery
@@ -90,6 +91,7 @@ class Market1501(BaseImageDataset):
 
             if annos is not None:
                 dataset.append((img_path, self.pid_begin + pid, camid, 0, annos.loc[pid].values))
+                return dataset, annos
             else:
                 dataset.append((img_path, self.pid_begin + pid, camid, 0))
-        return dataset
+                return dataset

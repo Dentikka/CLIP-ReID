@@ -1,4 +1,6 @@
 from turtle import pd
+import numpy as np
+import pandas
 import torch
 from torch import nn
 
@@ -48,7 +50,7 @@ def cosine_dist(x, y):
     return dist
 
 
-def hard_example_mining(dist_mat, labels, return_inds=False):
+def hard_example_mining_attributes(dist_mat, labels, attributes_data, return_inds=False):
     """For each anchor, find the hardest positive and negative sample.
     Args:
       dist_mat: pytorch Variable, pair wise distance between samples, shape [N, N]
@@ -68,9 +70,18 @@ def hard_example_mining(dist_mat, labels, return_inds=False):
     assert dist_mat.size(0) == dist_mat.size(1)
     N = dist_mat.size(0)
 
-    # shape [N, N]
-    is_pos = labels.expand(N, N).eq(labels.expand(N, N).t()) 
-    is_neg = labels.expand(N, N).ne(labels.expand(N, N).t())
+    # take attribute values and broadcast them
+    # for pairwise comparison
+    attributes = attributes_data.loc[labels].values
+    num_attributes = attributes.shape[1]
+    attributes = np.broadcast_to(attributes, (N, N, num_attributes))
+
+    # shape [N, N] attribute comparison masks
+    # is_pos indicates positive samples - those who have all same attributes
+    # attribute_mask indicates ratio of same attributes for each pair of objects
+    is_pos = np.all(attributes == attributes.swapaxes(0, 1), axis=-1)
+    is_neg = ~is_pos
+    attribute_mask = (attributes == attributes.swapaxes(0, 1)).sum(axis=-1) / num_attributes
 
     # `dist_ap` means distance(anchor, positive)
     # both `dist_ap` and `relative_p_inds` with shape [N, 1]
@@ -79,8 +90,10 @@ def hard_example_mining(dist_mat, labels, return_inds=False):
     # print(dist_mat[is_pos].shape)
     # `dist_an` means distance(anchor, negative)
     # both `dist_an` and `relative_n_inds` with shape [N, 1]
+    # for negative samples distances are adjusted with respect to attribute consistency
+    # so, we allow negative samples with simillar attribute set be closer to the anchor
     dist_an, relative_n_inds = torch.min(
-        dist_mat[is_neg].contiguous().view(N, -1), 1, keepdim=True)
+        (dist_mat / np.maximum(attribute_mask, 1))[is_neg].contiguous().view(N, -1), 1, keepdim=True)
     # shape [N]
     dist_ap = dist_ap.squeeze(1)
     dist_an = dist_an.squeeze(1)
@@ -103,14 +116,19 @@ def hard_example_mining(dist_mat, labels, return_inds=False):
     return dist_ap, dist_an
 
 
-class TripletLoss(object):
+class TripletLossAttributes(object):
     """
     Triplet loss using HARDER example mining,
     modified based on original triplet loss using hard example mining
+
+    It also uses a modification which aims at aligning
+    attribute values of the objects
     """
 
-    def __init__(self, margin=None, hard_factor=0.0):
+    def __init__(self, margin=None, attributes_data=None, hard_factor=0.0):
         self.margin = margin
+        assert isinstance(attributes_data, pandas.DataFrame)
+        self.attributes_data = attributes_data
         self.hard_factor = hard_factor
         if margin is not None:
             self.ranking_loss = nn.MarginRankingLoss(margin=margin)
@@ -121,16 +139,14 @@ class TripletLoss(object):
         if normalize_feature:
             global_feat = normalize(global_feat, axis=-1)
         dist_mat = euclidean_dist(global_feat, global_feat) #B,B
-        dist_ap, dist_an = hard_example_mining(dist_mat, labels) 
+        dist_ap, dist_an = hard_example_mining_attributes(dist_mat, labels, self.attributes_data) 
 
         dist_ap *= (1.0 + self.hard_factor)
         dist_an *= (1.0 - self.hard_factor)
 
-        y = dist_an.new().resize_as_(dist_an).fill_(1) 
+        y = dist_an.new().resize_as_(dist_an).fill_(1)
         if self.margin is not None:
             loss = self.ranking_loss(dist_an, dist_ap, y)
         else:
             loss = self.ranking_loss(dist_an - dist_ap, y)
         return loss, dist_ap, dist_an
-
-

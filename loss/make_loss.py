@@ -5,28 +5,28 @@
 """
 
 import torch.nn.functional as F
-from .softmax_loss import CrossEntropyLabelSmooth, LabelSmoothingCrossEntropy
-from .triplet_loss import TripletLoss
+from .softmax_loss import CrossEntropyAttributes
+from .triplet_loss import TripletLossAttributes
 from .center_loss import CenterLoss
 
 
-def make_loss(cfg, num_classes):    # modified by gu
+def make_loss(cfg, num_classes, attributes_data):
     sampler = cfg.DATALOADER.SAMPLER
     feat_dim = 2048
     center_criterion = CenterLoss(num_classes=num_classes, feat_dim=feat_dim, use_gpu=True)  # center loss
     if 'triplet' in cfg.MODEL.METRIC_LOSS_TYPE:
         if cfg.MODEL.NO_MARGIN:
-            triplet = TripletLoss()
+            triplet = TripletLossAttributes(attributes_data=attributes_data)
             print("using soft triplet loss for training")
         else:
-            triplet = TripletLoss(cfg.SOLVER.MARGIN)  # triplet loss
+            triplet = TripletLossAttributes(cfg.SOLVER.MARGIN, attributes_data=attributes_data)  # triplet loss
             print("using triplet loss with margin:{}".format(cfg.SOLVER.MARGIN))
     else:
         print('expected METRIC_LOSS_TYPE should be triplet'
               'but got {}'.format(cfg.MODEL.METRIC_LOSS_TYPE))
 
     if cfg.MODEL.IF_LABELSMOOTH == 'on':
-        xent = CrossEntropyLabelSmooth(num_classes=num_classes)
+        xent = CrossEntropyAttributes(attributes_data=attributes_data)
         print("label smooth on, numclasses:", num_classes)
 
     if sampler == 'softmax':

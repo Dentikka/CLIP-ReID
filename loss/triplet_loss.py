@@ -74,7 +74,7 @@ def hard_example_mining_attributes(dist_mat, labels, attributes_data, return_ind
     # for pairwise comparison
     attributes = attributes_data.loc[labels].values
     num_attributes = attributes.shape[1]
-    attributes = np.broadcast_to(attributes, (N, N, num_attributes))
+    attributes = np.broadcast_to(attributes[:, None, :], (N, N, num_attributes))
 
     # shape [N, N] attribute comparison masks
     # is_pos indicates positive samples - those who have all same attributes

@@ -91,7 +91,10 @@ class Market1501(BaseImageDataset):
 
             if annos is not None:
                 dataset.append((img_path, self.pid_begin + pid, camid, 0, annos.loc[pid].values))
-                return dataset, annos
             else:
                 dataset.append((img_path, self.pid_begin + pid, camid, 0))
-                return dataset
+            
+        if annos is not None:
+            return dataset, annos
+        else:
+            return dataset

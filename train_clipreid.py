@@ -65,11 +65,11 @@ if __name__ == '__main__':
     if cfg.MODEL.DIST_TRAIN:
         torch.distributed.init_process_group(backend='nccl', init_method='env://')
 
-    train_loader_stage2, train_loader_stage1, val_loader, num_query, num_classes, camera_num, view_num = make_dataloader(cfg)
+    train_loader_stage2, train_loader_stage1, val_loader, num_query, num_classes, camera_num, view_num, attributes_train = make_dataloader(cfg)
 
     model = make_model(cfg, num_class=num_classes, camera_num=camera_num, view_num = view_num)
 
-    loss_func, center_criterion = make_loss(cfg, num_classes=num_classes)
+    loss_func, center_criterion = make_loss(cfg, num_classes=num_classes, attributes_train=attributes_train)
 
     optimizer_1stage = make_optimizer_1stage(cfg, model)
     scheduler_1stage = create_scheduler(optimizer_1stage, num_epochs = cfg.SOLVER.STAGE1.MAX_EPOCHS, lr_min = cfg.SOLVER.STAGE1.LR_MIN, \

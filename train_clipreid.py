@@ -69,7 +69,7 @@ if __name__ == '__main__':
 
     model = make_model(cfg, num_class=num_classes, camera_num=camera_num, view_num = view_num)
 
-    loss_func, center_criterion = make_loss(cfg, num_classes=num_classes, attributes_train=attributes_train)
+    loss_func, center_criterion = make_loss(cfg, num_classes=num_classes, attributes_data=attributes_train)
 
     optimizer_1stage = make_optimizer_1stage(cfg, model)
     scheduler_1stage = create_scheduler(optimizer_1stage, num_epochs = cfg.SOLVER.STAGE1.MAX_EPOCHS, lr_min = cfg.SOLVER.STAGE1.LR_MIN, \

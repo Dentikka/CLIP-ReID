@@ -26,8 +26,9 @@ def make_loss(cfg, num_classes, attributes_data):
               'but got {}'.format(cfg.MODEL.METRIC_LOSS_TYPE))
 
     if cfg.MODEL.IF_LABELSMOOTH == 'on':
-        xent = CrossEntropyAttributes(attributes_data=attributes_data)
-        print("label smooth on, numclasses:", num_classes)
+        print('This project version ignores label smoothing parameter'
+              'and uses attribute-guided cross-entropy loss')
+    xent = CrossEntropyAttributes(attributes_data=attributes_data)
 
     if sampler == 'softmax':
         def loss_func(score, feat, target):

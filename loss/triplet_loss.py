@@ -72,7 +72,7 @@ def hard_example_mining_attributes(dist_mat, labels, attributes_data, return_ind
 
     # take attribute values and broadcast them
     # for pairwise comparison
-    attributes = attributes_data.loc[labels].values
+    attributes = attributes_data.loc[labels.detach().cpu()].values
     num_attributes = attributes.shape[1]
     attributes = np.broadcast_to(attributes[:, None, :], (N, N, num_attributes))
 
@@ -82,6 +82,7 @@ def hard_example_mining_attributes(dist_mat, labels, attributes_data, return_ind
     is_pos = np.all(attributes == attributes.swapaxes(0, 1), axis=-1)
     is_neg = ~is_pos
     attribute_mask = (attributes == attributes.swapaxes(0, 1)).sum(axis=-1) / num_attributes
+    attribute_mask = torch.tensor(attribute_mask, requires_grad=False, device=dist_mat.device)
 
     # `dist_ap` means distance(anchor, positive)
     # both `dist_ap` and `relative_p_inds` with shape [N, 1]
@@ -93,7 +94,7 @@ def hard_example_mining_attributes(dist_mat, labels, attributes_data, return_ind
     # for negative samples distances are adjusted with respect to attribute consistency
     # so, we allow negative samples with simillar attribute set be closer to the anchor
     dist_an, relative_n_inds = torch.min(
-        (dist_mat / np.maximum(attribute_mask, 1))[is_neg].contiguous().view(N, -1), 1, keepdim=True)
+        (dist_mat / torch.maximum(attribute_mask, torch.tensor(1)))[is_neg].contiguous().view(N, -1), 1, keepdim=True)
     # shape [N]
     dist_ap = dist_ap.squeeze(1)
     dist_an = dist_an.squeeze(1)

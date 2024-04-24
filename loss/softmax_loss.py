@@ -27,14 +27,15 @@ class CrossEntropyAttributes(nn.Module):
 
         log_probs = self.logsoftmax(inputs) 
         
-        attributes_target = self.attributes_data.loc[targets].values
+        attributes_target = self.attributes_data.loc[targets.detach().cpu()].values
         attributes_target = np.broadcast_to(attributes_target[:, None, :], (N, num_classes, num_attributes))
         attributes_all = self.attributes_data.values
         attributes_all = np.broadcast_to(attributes_all[None, :, :], (N, num_classes, num_attributes))
 
         attributes_mask = (attributes_target == attributes_all).sum(axis=-1) / num_attributes
+        attributes_mask = torch.tensor(attributes_mask, requires_grad=False)
 
-        if self.use_gpu: targets = targets.cuda()
+        if self.use_gpu: attributes_mask = attributes_mask.cuda()
         loss = (- attributes_mask * log_probs).mean(0).sum()
         return loss
 

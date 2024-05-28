@@ -48,6 +48,25 @@ class TextEncoder(nn.Module):
         # take features from the eot embedding (eot_token is the highest number in each sequence)
         x = x[torch.arange(x.shape[0]), tokenized_prompts.argmax(dim=-1)] @ self.text_projection 
         return x
+    
+
+class KeypointsEncoder(nn.Module):
+    def __init__(self, out_features):
+        super().__init__()
+        self.model = nn.Sequential(
+            nn.Linear(34, 100),
+            nn.ReLU(),
+            nn.Linear(100, 100),
+            nn.ReLU(),
+            nn.BatchNorm1d(100),
+            nn.Dropout(0.5),
+            nn.Linear(100, out_features)
+        )
+
+    def forward(self, x):
+        x = x.flatten(start_dim=-2)
+        return self.model(x)
+
 
 class build_transformer(nn.Module):
     def __init__(self, num_classes, camera_num, view_num, cfg):
@@ -104,7 +123,9 @@ class build_transformer(nn.Module):
         self.prompt_learner = PromptLearner(num_classes, dataset_name, clip_model.dtype, clip_model.token_embedding)
         self.text_encoder = TextEncoder(clip_model)
 
-    def forward(self, x = None, label=None, get_image = False, get_text = False, cam_label= None, view_label=None):
+        self.keypoints_encoder = KeypointsEncoder(self.in_planes_proj)
+
+    def forward(self, x=None, label=None, get_image=False, get_text=False, get_keypoins=False, cam_label=None, view_label=None):
         if get_text == True:
             prompts = self.prompt_learner(label) 
             text_features = self.text_encoder(prompts, self.prompt_learner.tokenized_prompts)
@@ -116,6 +137,10 @@ class build_transformer(nn.Module):
                 return image_features_proj[0]
             elif self.model_name == 'ViT-B-16':
                 return image_features_proj[:,0]
+
+        if get_keypoins == True:
+            keypoint_features = self.keypoints_encoder(x)
+            return keypoint_features
         
         if self.model_name == 'RN50':
             image_features_last, image_features, image_features_proj = self.image_encoder(x) 

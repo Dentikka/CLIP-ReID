@@ -9,6 +9,9 @@ import re
 
 import os.path as osp
 
+import numpy as np
+import pandas as pd
+
 from .bases import BaseImageDataset
 from collections import defaultdict
 import pickle
@@ -25,16 +28,19 @@ class Market1501(BaseImageDataset):
     """
     dataset_dir = 'Market-1501-v15.09.15'
 
-    def __init__(self, root='', verbose=True, pid_begin = 0, **kwargs):
+    def __init__(self, root='', keypoints_dir='', verbose=True, pid_begin = 0, **kwargs):
         super(Market1501, self).__init__()
         self.dataset_dir = osp.join(root, self.dataset_dir)
+        self.keypoints_dir = keypoints_dir
         self.train_dir = osp.join(self.dataset_dir, 'bounding_box_train')
         self.query_dir = osp.join(self.dataset_dir, 'query')
         self.gallery_dir = osp.join(self.dataset_dir, 'bounding_box_test')
+        self.keypoints_train_path = osp.join(self.keypoints_dir, 'bounding_box_train.csv')
 
         self._check_before_run()
         self.pid_begin = pid_begin
-        train = self._process_dir(self.train_dir, relabel=True)
+        keypoints_train: pd.Series = pd.read_csv(self.keypoints_train_path).set_index('image_name')['keypoints'] 
+        train = self._process_dir(self.train_dir, relabel=True, keypoints=keypoints_train)
         query = self._process_dir(self.query_dir, relabel=False)
         gallery = self._process_dir(self.gallery_dir, relabel=False)
 
@@ -42,6 +48,7 @@ class Market1501(BaseImageDataset):
             print("=> Market1501 loaded")
             self.print_dataset_statistics(train, query, gallery)
 
+        self.keypoints_train = keypoints_train
         self.train = train
         self.query = query
         self.gallery = gallery
@@ -61,7 +68,7 @@ class Market1501(BaseImageDataset):
         if not osp.exists(self.gallery_dir):
             raise RuntimeError("'{}' is not available".format(self.gallery_dir))
 
-    def _process_dir(self, dir_path, relabel=False):
+    def _process_dir(self, dir_path, relabel=False, keypoints: pd.Series | None = None):
         img_paths = glob.glob(osp.join(dir_path, '*.jpg'))
         pattern = re.compile(r'([-\d]+)_c(\d)')
 
@@ -80,5 +87,10 @@ class Market1501(BaseImageDataset):
             camid -= 1  # index starts from 0
             if relabel: pid = pid2label[pid]
 
-            dataset.append((img_path, self.pid_begin + pid, camid, 0))
+            if keypoints is not None:
+                img_keypoints = np.array(eval(keypoints[osp.split(img_path)[-1]])).reshape(17, 2)
+            else:
+                img_keypoints = None
+
+            dataset.append((img_path, self.pid_begin + pid, camid, 0, img_keypoints))
         return dataset

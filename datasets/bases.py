@@ -30,7 +30,7 @@ class BaseDataset(object):
 
     def get_imagedata_info(self, data):
         pids, cams, tracks = [], [], []
-        for _, pid, camid, trackid in data:
+        for _, pid, camid, trackid, _ in data:
             pids += [pid]
             cams += [camid]
             tracks += [trackid]
@@ -76,10 +76,10 @@ class ImageDataset(Dataset):
         return len(self.dataset)
 
     def __getitem__(self, index):
-        img_path, pid, camid, trackid = self.dataset[index]
+        img_path, pid, camid, trackid, keypoints = self.dataset[index]
         img = read_image(img_path)
 
         if self.transform is not None:
             img = self.transform(img)
 
-        return img, pid, camid, trackid, img_path.split('/')[-1]
+        return img, pid, camid, trackid, img_path.split('/')[-1], keypoints

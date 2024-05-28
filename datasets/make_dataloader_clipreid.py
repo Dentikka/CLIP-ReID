@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 import torchvision.transforms as T
 from torch.utils.data import DataLoader
@@ -27,17 +28,18 @@ def train_collate_fn(batch):
     """
     # collate_fn这个函数的输入就是一个list，list的长度是一个batch size，list中的每个元素都是__getitem__得到的结果
     """
-    imgs, pids, camids, viewids , _ = zip(*batch)
+    imgs, pids, camids, viewids , _, keypoints = zip(*batch)
     pids = torch.tensor(pids, dtype=torch.int64)
     viewids = torch.tensor(viewids, dtype=torch.int64)
     camids = torch.tensor(camids, dtype=torch.int64)
-    return torch.stack(imgs, dim=0), pids, camids, viewids,
+    keypoints = torch.tensor(np.stack(keypoints))
+    return torch.stack(imgs, dim=0), pids, camids, viewids, keypoints
 
 def val_collate_fn(batch):
-    imgs, pids, camids, viewids, img_paths = zip(*batch)
+    imgs, pids, camids, viewids, img_paths, _ = zip(*batch)
     viewids = torch.tensor(viewids, dtype=torch.int64)
     camids_batch = torch.tensor(camids, dtype=torch.int64)
-    return torch.stack(imgs, dim=0), pids, camids, camids_batch, viewids, img_paths
+    return torch.stack(imgs, dim=0), pids, camids, camids_batch, viewids, img_paths, None
 
 def make_dataloader(cfg):
     train_transforms = T.Compose([

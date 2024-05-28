@@ -41,9 +41,10 @@ def do_train_stage1(cfg,
     image_features = []
     labels = []
     with torch.no_grad():
-        for n_iter, (img, vid, target_cam, target_view) in enumerate(train_loader_stage1):
+        for n_iter, (img, vid, target_cam, target_view, kps) in enumerate(train_loader_stage1):
             img = img.to(device)
             target = vid.to(device)
+            kps = kps.to(device)
             with amp.autocast(enabled=True):
                 image_feature = model(img, target, get_image = True)
                 for i, img_feat in zip(target, image_feature):

@@ -79,11 +79,12 @@ def do_train_stage2(cfg,
         scheduler.step()
 
         model.train()
-        for n_iter, (img, vid, target_cam, target_view) in enumerate(train_loader_stage2):
+        for n_iter, (img, vid, target_cam, target_view, kps) in enumerate(train_loader_stage2):
             optimizer.zero_grad()
             optimizer_center.zero_grad()
             img = img.to(device)
             target = vid.to(device)
+            kps = kps.to(device)
             if cfg.MODEL.SIE_CAMERA:
                 target_cam = target_cam.to(device)
             else: 
@@ -140,7 +141,7 @@ def do_train_stage2(cfg,
             if cfg.MODEL.DIST_TRAIN:
                 if dist.get_rank() == 0:
                     model.eval()
-                    for n_iter, (img, vid, camid, camids, target_view, _) in enumerate(val_loader):
+                    for n_iter, (img, vid, camid, camids, target_view, _, _) in enumerate(val_loader):
                         with torch.no_grad():
                             img = img.to(device)
                             if cfg.MODEL.SIE_CAMERA:
@@ -161,7 +162,7 @@ def do_train_stage2(cfg,
                     torch.cuda.empty_cache()
             else:
                 model.eval()
-                for n_iter, (img, vid, camid, camids, target_view, _) in enumerate(val_loader):
+                for n_iter, (img, vid, camid, camids, target_view, _, _) in enumerate(val_loader):
                     with torch.no_grad():
                         img = img.to(device)
                         if cfg.MODEL.SIE_CAMERA:

@@ -88,7 +88,7 @@ class Market1501(BaseImageDataset):
             if relabel: pid = pid2label[pid]
 
             if keypoints is not None:
-                img_keypoints = np.array(eval(keypoints[osp.split(img_path)[-1]])).reshape(17, 2)
+                img_keypoints = np.array(eval(keypoints[osp.split(img_path)[-1]]), dtype=np.float32).reshape(17, 2)
             else:
                 img_keypoints = None
 

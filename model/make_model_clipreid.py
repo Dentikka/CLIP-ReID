@@ -125,7 +125,7 @@ class build_transformer(nn.Module):
 
         self.keypoints_encoder = KeypointsEncoder(self.in_planes_proj)
 
-    def forward(self, x=None, label=None, get_image=False, get_text=False, get_keypoins=False, cam_label=None, view_label=None):
+    def forward(self, x=None, label=None, get_image=False, get_text=False, get_keypoints=False, cam_label=None, view_label=None):
         if get_text == True:
             prompts = self.prompt_learner(label) 
             text_features = self.text_encoder(prompts, self.prompt_learner.tokenized_prompts)
@@ -138,7 +138,7 @@ class build_transformer(nn.Module):
             elif self.model_name == 'ViT-B-16':
                 return image_features_proj[:,0]
 
-        if get_keypoins == True:
+        if get_keypoints == True:
             keypoint_features = self.keypoints_encoder(x)
             return keypoint_features
         

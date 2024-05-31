@@ -94,8 +94,7 @@ def do_train_stage2(cfg,
             else: 
                 target_view = None
             with amp.autocast(enabled=True):
-                score, feat, image_features = model(x = img, label = target, cam_label=target_cam, view_label=target_view)
-                keypoints_features = model(x = kps, get_keypoints = True)
+                score, feat, image_features = model(x = img, label = target, keypoints = kps, cam_label=target_cam, view_label=target_view)
                 logits = image_features @ text_features.t()
                 loss = loss_fn(score, feat, target, target_cam, logits)
 

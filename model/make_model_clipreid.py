@@ -125,7 +125,9 @@ class build_transformer(nn.Module):
 
         self.keypoints_encoder = KeypointsEncoder(self.in_planes_proj)
 
-    def forward(self, x=None, label=None, get_image=False, get_text=False, get_keypoints=False, cam_label=None, view_label=None):
+        self.image_kypoints_projector = nn.Linear(2*self.in_planes_proj, self.in_planes_proj)
+
+    def forward(self, x=None, label=None, keypoints=None, get_image=False, get_text=False, cam_label=None, view_label=None):
         if get_text == True:
             prompts = self.prompt_learner(label) 
             text_features = self.text_encoder(prompts, self.prompt_learner.tokenized_prompts)
@@ -137,16 +139,16 @@ class build_transformer(nn.Module):
                 return image_features_proj[0]
             elif self.model_name == 'ViT-B-16':
                 return image_features_proj[:,0]
-
-        if get_keypoints == True:
-            keypoint_features = self.keypoints_encoder(x)
-            return keypoint_features
         
         if self.model_name == 'RN50':
-            image_features_last, image_features, image_features_proj = self.image_encoder(x) 
+            image_features_last, image_features, image_features_proj = self.image_encoder(x)
             img_feature_last = nn.functional.avg_pool2d(image_features_last, image_features_last.shape[2:4]).view(x.shape[0], -1) 
             img_feature = nn.functional.avg_pool2d(image_features, image_features.shape[2:4]).view(x.shape[0], -1) 
             img_feature_proj = image_features_proj[0]
+            if keypoints is not None:
+                kps_feature_proj = self.keypoints_encoder(keypoints)
+                img_feature_proj = torch.cat([img_feature_proj, kps_feature_proj], dim=1)
+                img_feature_proj = self.image_kypoints_projector(img_feature_proj)
 
         elif self.model_name == 'ViT-B-16':
             if cam_label != None and view_label!=None:

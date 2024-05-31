@@ -40,22 +40,17 @@ def do_train_stage1(cfg,
     logger.info("model: {}".format(model))
     image_features = []
     labels = []
-    keypoints_features = []
     with torch.no_grad():
         for n_iter, (img, vid, target_cam, target_view, kps) in enumerate(train_loader_stage1):
             img = img.to(device)
             target = vid.to(device)
-            kps = kps.to(device)
             with amp.autocast(enabled=True):
                 image_feature = model(img, target, get_image = True)
-                keypoints_feature = model(kps, get_keypoints = True)
-                for i, img_feat, kp_feat in zip(target, image_feature, keypoints_feature):
+                for i, img_feat in zip(target, image_feature):
                     labels.append(i)
                     image_features.append(img_feat.cpu())
-                    keypoints_features.append(kp_feat.cpu())
         labels_list = torch.stack(labels, dim=0).cuda() #N
         image_features_list = torch.stack(image_features, dim=0).cuda()
-        keypoints_features_list = torch.stack(keypoints_features, dim=0).cuda()
 
         batch = cfg.SOLVER.STAGE1.IMS_PER_BATCH
         num_image = labels_list.shape[0]

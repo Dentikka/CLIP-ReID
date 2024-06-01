@@ -125,7 +125,7 @@ class build_transformer(nn.Module):
 
         self.keypoints_encoder = KeypointsEncoder(self.in_planes_proj)
 
-        self.image_kypoints_projector = nn.Linear(2*self.in_planes_proj, self.in_planes_proj)
+        self.image_keypoints_projector = nn.Linear(2*self.in_planes_proj, self.in_planes_proj)
 
     def forward(self, x=None, label=None, keypoints=None, get_image=False, get_text=False, cam_label=None, view_label=None):
         if get_text == True:
@@ -148,7 +148,7 @@ class build_transformer(nn.Module):
             if keypoints is not None:
                 kps_feature_proj = self.keypoints_encoder(keypoints)
                 img_feature_proj = torch.cat([img_feature_proj, kps_feature_proj], dim=1)
-                img_feature_proj = self.image_kypoints_projector(img_feature_proj)
+                img_feature_proj = self.image_keypoints_projector(img_feature_proj)
 
         elif self.model_name == 'ViT-B-16':
             if cam_label != None and view_label!=None:

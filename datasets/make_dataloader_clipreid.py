@@ -66,14 +66,14 @@ def make_dataloader(cfg):
     def train_transforms(img, kps):
         transformed = train_geom_transform_(image=img, keypoints=kps)
         img, kps = transformed['image'], transformed['keypoints']
-        kps = np.array(kps)
+        kps = np.array(kps).astype(np.float32)
         img = train_aug_transform_(img)
         return img, kps
 
     def val_transforms(img, kps):
         transformed = val_geom_transform_(image=img, keypoints=kps)
         img, kps = transformed['image'], transformed['keypoints']
-        kps = np.array(kps)
+        kps = np.array(kps).astype(np.float32)
         img = val_aug_transform_(img)
         return img, kps
 

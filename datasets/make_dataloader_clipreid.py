@@ -44,27 +44,38 @@ def val_collate_fn(batch):
     return torch.stack(imgs, dim=0), pids, camids, camids_batch, viewids, img_paths, None
 
 def make_dataloader(cfg):
-    train_transform_ = A.Compose([
+    kps_params = A.KeypointParams(format='xy', remove_invisible=False)
+
+    train_geom_transform_ = A.Compose([
         A.Resize(cfg.INPUT.SIZE_TRAIN[0], cfg.INPUT.SIZE_TRAIN[1], interpolation=3),
         A.HorizontalFlip(p=cfg.INPUT.PROB),
         A.PadIfNeeded(min_height=cfg.INPUT.SIZE_TRAIN[0] + 2*cfg.INPUT.PADDING, min_width=cfg.INPUT.SIZE_TRAIN[1] + 2*cfg.INPUT.PADDING, value=0, border_mode=0),
         A.RandomCrop(cfg.INPUT.SIZE_TRAIN[0], cfg.INPUT.SIZE_TRAIN[1]),
         A.Normalize(mean=cfg.INPUT.PIXEL_MEAN, std=cfg.INPUT.PIXEL_STD),
-        A.CoarseDropout(max_holes=1, max_height=cfg.INPUT.SIZE_TRAIN[0], max_width=cfg.INPUT.SIZE_TRAIN[1], min_holes=1, min_height=1, min_width=1, fill_value=(0, 0, 0), mask_fill_value=None, p=cfg.INPUT.RE_PROB),
         ToTensorV2()
-    ])
+    ], keypoint_params=kps_params)
+    train_aug_transform_ = RandomErasing(probability=cfg.INPUT.RE_PROB, mode='pixel', max_count=1, device='cpu')
 
-    val_transform_ = A.Compose([
+    val_geom_transform_ = A.Compose([
         A.Resize(cfg.INPUT.SIZE_TEST[0], cfg.INPUT.SIZE_TEST[1]),
         A.Normalize(mean=cfg.INPUT.PIXEL_MEAN, std=cfg.INPUT.PIXEL_STD),
         ToTensorV2()
-    ])
+    ], keypoint_params=kps_params)
+    val_aug_transform_ = lambda x: x
 
-    def train_transforms(img):
-        return train_transform_(image=img)['image']
+    def train_transforms(img, kps):
+        transformed = train_geom_transform_(image=img, keypoints=kps)
+        img, kps = transformed['image'], transformed['keypoints']
+        kps = np.array(kps)
+        img = train_aug_transform_(img)
+        return img, kps
 
-    def val_transforms(img):
-        return val_transform_(image=img)['image']
+    def val_transforms(img, kps):
+        transformed = val_geom_transform_(image=img, keypoints=kps)
+        img, kps = transformed['image'], transformed['keypoints']
+        kps = np.array(kps)
+        img = val_aug_transform_(img)
+        return img, kps
 
     num_workers = cfg.DATALOADER.NUM_WORKERS
 

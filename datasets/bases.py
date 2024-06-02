@@ -75,10 +75,10 @@ class ImageDataset(Dataset):
         return len(self.dataset)
 
     def __getitem__(self, index):
-        img_path, pid, camid, trackid, keypoints = self.dataset[index]
+        img_path, pid, camid, trackid, kps = self.dataset[index]
         img = read_image(img_path)
 
         if self.transform is not None:
-            img = self.transform(img)
+            img, kps = self.transform(img, kps)
 
-        return img, pid, camid, trackid, img_path.split('/')[-1], keypoints
+        return img, pid, camid, trackid, img_path.split('/')[-1], kps

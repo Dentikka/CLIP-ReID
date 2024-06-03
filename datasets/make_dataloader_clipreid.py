@@ -70,12 +70,11 @@ def make_dataloader(cfg):
         img = train_aug_transform_(img)
         return img, kps
 
-    def val_transforms(img, kps):
-        transformed = val_geom_transform_(image=img, keypoints=kps)
-        img, kps = transformed['image'], transformed['keypoints']
-        kps = np.array(kps).astype(np.float32)
+    def val_transforms(img, kps=None):
+        transformed = val_geom_transform_(image=img)
+        img = transformed['image']
         img = val_aug_transform_(img)
-        return img, kps
+        return img, None
 
     num_workers = cfg.DATALOADER.NUM_WORKERS
 

@@ -34,7 +34,7 @@ def train_collate_fn(batch):
     pids = torch.tensor(pids, dtype=torch.int64)
     viewids = torch.tensor(viewids, dtype=torch.int64)
     camids = torch.tensor(camids, dtype=torch.int64)
-    keypoints = torch.tensor(np.stack(keypoints))
+    keypoints = torch.tensor(np.stack(keypoints)) if keypoints[0] is not None else None
     return torch.stack(imgs, dim=0), pids, camids, viewids, keypoints
 
 def val_collate_fn(batch):

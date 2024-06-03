@@ -146,7 +146,7 @@ class build_transformer(nn.Module):
             img_feature = nn.functional.avg_pool2d(image_features, image_features.shape[2:4]).view(x.shape[0], -1) 
             img_feature_proj = image_features_proj[0]
             if keypoints is not None:
-                keypoints /= x.shape[2:]
+                keypoints /= torch.tensor(x.shape[2:]).cuda()
                 kps_feature_proj = self.keypoints_encoder(keypoints)
                 img_feature_proj = torch.cat([img_feature_proj, kps_feature_proj], dim=1)
                 img_feature_proj = self.image_keypoints_projector(img_feature_proj)

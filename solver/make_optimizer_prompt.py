@@ -5,7 +5,11 @@ def make_optimizer_1stage(cfg, model):
     params = []
     keys = []
     for key, value in model.named_parameters():
+        if "text_encoder" in key:
+            value.requires_grad_(True)
+            continue   
         if "prompt_learner" in key:
+            value.requires_grad_(True)
             lr = cfg.SOLVER.STAGE1.BASE_LR
             weight_decay = cfg.SOLVER.STAGE1.WEIGHT_DECAY
             params += [{"params": [value], "lr": lr, "weight_decay": weight_decay}]

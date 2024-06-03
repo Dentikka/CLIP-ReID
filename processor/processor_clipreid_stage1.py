@@ -37,7 +37,7 @@ def do_train_stage1(cfg,
     import time
     from datetime import timedelta
     all_start_time = time.monotonic()
-    logger.info("model: {}".format(model))
+    # logger.info("model: {}".format(model))
     image_features = []
     labels = []
     with torch.no_grad():

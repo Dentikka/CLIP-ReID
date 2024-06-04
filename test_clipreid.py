@@ -27,14 +27,14 @@ if __name__ == "__main__":
         os.makedirs(output_dir)
 
     logger = setup_logger("transreid", output_dir, if_train=False)
-    logger.info(args)
+    # logger.info(args)
 
-    if args.config_file != "":
-        logger.info("Loaded configuration file {}".format(args.config_file))
-        with open(args.config_file, 'r') as cf:
-            config_str = "\n" + cf.read()
-            logger.info(config_str)
-    logger.info("Running with config:\n{}".format(cfg))
+    # if args.config_file != "":
+        # logger.info("Loaded configuration file {}".format(args.config_file))
+        # with open(args.config_file, 'r') as cf:
+        #     config_str = "\n" + cf.read()
+        #     logger.info(config_str)
+    # logger.info("Running with config:\n{}".format(cfg))
 
     os.environ['CUDA_VISIBLE_DEVICES'] = cfg.MODEL.DEVICE_ID
 

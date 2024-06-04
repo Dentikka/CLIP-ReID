@@ -49,6 +49,25 @@ class TextEncoder(nn.Module):
         x = x[torch.arange(x.shape[0]), tokenized_prompts.argmax(dim=-1)] @ self.text_projection 
         return x
 
+
+class KeypointsEncoder(nn.Module):
+    def __init__(self, out_features):
+        super().__init__()
+        self.model = nn.Sequential(
+            nn.Linear(34, 100),
+            nn.ReLU(),
+            nn.Linear(100, 100),
+            nn.ReLU(),
+            nn.BatchNorm1d(100),
+            nn.Dropout(),
+            nn.Linear(100, out_features)
+        )
+
+    def forward(self, x):
+        x = x.flatten(start_dim=-2)
+        return self.model(x)
+
+
 class build_transformer(nn.Module):
     def __init__(self, num_classes, camera_num, view_num, cfg):
         super(build_transformer, self).__init__()
@@ -103,6 +122,11 @@ class build_transformer(nn.Module):
         dataset_name = cfg.DATASETS.NAMES
         self.prompt_learner = PromptLearner(num_classes, dataset_name, clip_model.dtype, clip_model.token_embedding)
         self.text_encoder = TextEncoder(clip_model)
+
+        if cfg.TEST.KEYPOINTS_MODEL == 'ENC_drop_PROJ':
+            self.keypoints_encoder = KeypointsEncoder(self.in_planes_proj)
+
+            self.image_keypoints_projector = nn.Linear(2*self.in_planes_proj, self.in_planes_proj)
 
     def forward(self, x = None, label=None, get_image = False, get_text = False, cam_label= None, view_label=None):
         if get_text == True:

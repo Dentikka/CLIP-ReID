@@ -147,6 +147,8 @@ class build_transformer(nn.Module):
             if keypoints is not None:
                 keypoints /= torch.tensor(x.shape[3:1:-1]).cuda()
                 kps_feature_proj = self.keypoints_encoder(keypoints)
+                img_feature_proj = img_feature_proj / torch.linalg.norm(img_feature_proj, dim=-1, keepdim=True)
+                kps_feature_proj = kps_feature_proj / torch.linalg.norm(kps_feature_proj, dim=-1, keepdim=True)
                 img_feature_proj = torch.cat([img_feature_proj, kps_feature_proj], dim=1)
                 img_feature_proj = self.image_keypoints_projector(img_feature_proj)
 

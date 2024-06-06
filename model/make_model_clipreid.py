@@ -50,7 +50,7 @@ class TextEncoder(nn.Module):
         return x
 
 class build_transformer(nn.Module):
-    def __init__(self, num_classes, camera_num, view_num, cfg):
+    def __init__(self, num_classes, camera_num, view_num, attributes, attribute_names, cfg):
         super(build_transformer, self).__init__()
         self.model_name = cfg.MODEL.NAME
         self.cos_layer = cfg.MODEL.COS_LAYER
@@ -101,12 +101,12 @@ class build_transformer(nn.Module):
             print('camera number is : {}'.format(view_num))
 
         dataset_name = cfg.DATASETS.NAMES
-        self.prompt_learner = PromptLearner(num_classes, dataset_name, clip_model.dtype, clip_model.token_embedding)
+        self.prompt_processor = PromptProcessor(attributes, attribute_names, clip_model.dtype, clip_model.token_embedding)
         self.text_encoder = TextEncoder(clip_model)
 
     def forward(self, x = None, label=None, get_image = False, get_text = False, cam_label= None, view_label=None):
         if get_text == True:
-            prompts = self.prompt_learner(label) 
+            prompts = self.prompt_processor(label) 
             text_features = self.text_encoder(prompts, self.prompt_learner.tokenized_prompts)
             return text_features
 
@@ -166,8 +166,8 @@ class build_transformer(nn.Module):
         print('Loading pretrained model for finetuning from {}'.format(model_path))
 
 
-def make_model(cfg, num_class, camera_num, view_num):
-    model = build_transformer(num_class, camera_num, view_num, cfg)
+def make_model(cfg, num_class, camera_num, view_num, attributes, attribute_names):
+    model = build_transformer(num_class, camera_num, view_num, attributes, attribute_names, cfg)
     return model
 
 
@@ -188,52 +188,65 @@ def load_clip_to_cpu(backbone_name, h_resolution, w_resolution, vision_stride_si
 
     return model
 
-class PromptLearner(nn.Module):
-    def __init__(self, num_class, dataset_name, dtype, token_embedding):
+
+class PromptProcessor():
+    def __init__(self, attributes, attribute_names, dtype, token_embedding):
         super().__init__()
-        if dataset_name == "VehicleID" or dataset_name == "veri":
-            ctx_init = "A photo of a X X X X vehicle."
-        else:
-            ctx_init = "A photo of a X X X X person."
 
-        ctx_dim = 512
-        # use given words to initialize context vectors
-        ctx_init = ctx_init.replace("_", " ")
-        n_ctx = 4
+        self.attributes = attributes
+        self.attribute_names = attribute_names
+
+        self.dtype = dtype
+        self.token_embedding = token_embedding
+
+    def __call__(self, label):
         
-        tokenized_prompts = clip.tokenize(ctx_init).cuda() 
+        tokenized_prompts = []
+        for lb in label:
+            att = self.attributes.loc[lb].values
+            prompt = self.attribute_to_description(att)
+            tokenized_prompts.append(clip.tokenize(prompt).cuda() )
+
         with torch.no_grad():
-            embedding = token_embedding(tokenized_prompts).type(dtype) 
-        self.tokenized_prompts = tokenized_prompts  # torch.Tensor
+            embeddings = self.token_embedding(tokenized_prompts).type(self.dtype)
 
-        n_cls_ctx = 4
-        cls_vectors = torch.empty(num_class, n_cls_ctx, ctx_dim, dtype=dtype) 
-        nn.init.normal_(cls_vectors, std=0.02)
-        self.cls_ctx = nn.Parameter(cls_vectors) 
-
+        return embeddings
+    
+    def attribute_to_description(self, att):
+        desc = 'A photo of a'
         
-        # These token vectors will be saved when in save_model(),
-        # but they should be ignored in load_model() as we want to use
-        # those computed using the current class names
-        self.register_buffer("token_prefix", embedding[:, :n_ctx + 1, :])  
-        self.register_buffer("token_suffix", embedding[:, n_ctx + 1 + n_cls_ctx: , :])  
-        self.num_class = num_class
-        self.n_cls_ctx = n_cls_ctx
+        a = att[0]
+        desc += f' {self.attribute_names['age'][a]}'
+        
+        a = att[14]
+        desc += f' {self.attribute_names['gender'][a]}'
 
-    def forward(self, label):
-        cls_ctx = self.cls_ctx[label] 
-        b = label.shape[0]
-        prefix = self.token_prefix.expand(b, -1, -1) 
-        suffix = self.token_suffix.expand(b, -1, -1) 
-            
-        prompts = torch.cat(
-            [
-                prefix,  # (n_cls, 1, dim)
-                cls_ctx,     # (n_cls, n_ctx, dim)
-                suffix,  # (n_cls, *, dim)
-            ],
-            dim=1,
-        ) 
+        a = att[15]
+        desc += f' with {self.attribute_names['hair'][a]}'
 
-        return prompts 
+        a = np.argmax(att[19:27])
+        desc += f'wearing {self.attribute_names['upper body cloth color'][a]}'
 
+        a = att[18]
+        desc += f' clothes with {self.attribute_names['sleeve'][a]}'
+
+        a = att[4]
+        desc += f' and a {self.attribute_names['down'][a]}'
+
+        a = np.argmax(att[5:14])
+        desc += f' {self.attribute_names['lower body cloth color'][a]}'
+
+        a = att[3]
+        desc += f' {self.attribute_names['lower body cloth type'][a]}'
+
+        a = att[17]
+        desc += f' {self.attribute_names['hat'][a]}'
+
+        a = att[17]
+        desc += f' {self.attribute_names['backpack'][a]}'
+
+        a = att[17]
+        desc += f' {self.attribute_names['bag'][a]}'
+
+        a = att[17]
+        desc += f' {self.attribute_names['handbag'][a]}'

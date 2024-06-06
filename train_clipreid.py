@@ -65,24 +65,11 @@ if __name__ == '__main__':
     if cfg.MODEL.DIST_TRAIN:
         torch.distributed.init_process_group(backend='nccl', init_method='env://')
 
-    train_loader_stage2, train_loader_stage1, val_loader, num_query, num_classes, camera_num, view_num, attributes_train = make_dataloader(cfg)
+    train_loader_stage2, train_loader_stage1, val_loader, num_query, num_classes, camera_num, view_num, attributes_train, attribute_names = make_dataloader(cfg)
 
-    model = make_model(cfg, num_class=num_classes, camera_num=camera_num, view_num = view_num)
+    model = make_model(cfg, num_class=num_classes, camera_num=camera_num, view_num = view_num, attributes = attributes_train, attribute_names = attribute_names)
 
     loss_func, center_criterion = make_loss(cfg, num_classes=num_classes)
-
-    optimizer_1stage = make_optimizer_1stage(cfg, model)
-    scheduler_1stage = create_scheduler(optimizer_1stage, num_epochs = cfg.SOLVER.STAGE1.MAX_EPOCHS, lr_min = cfg.SOLVER.STAGE1.LR_MIN, \
-                        warmup_lr_init = cfg.SOLVER.STAGE1.WARMUP_LR_INIT, warmup_t = cfg.SOLVER.STAGE1.WARMUP_EPOCHS, noise_range = None)
-
-    do_train_stage1(
-        cfg,
-        model,
-        train_loader_stage1,
-        optimizer_1stage,
-        scheduler_1stage,
-        args.local_rank
-    )
 
     optimizer_2stage, optimizer_center_2stage = make_optimizer_2stage(cfg, model, center_criterion)
     scheduler_2stage = WarmupMultiStepLR(optimizer_2stage, cfg.SOLVER.STAGE2.STEPS, cfg.SOLVER.STAGE2.GAMMA, cfg.SOLVER.STAGE2.WARMUP_FACTOR,

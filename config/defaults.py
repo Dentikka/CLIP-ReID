@@ -109,105 +109,54 @@ _C.DATALOADER.NUM_INSTANCE = 16
 _C.SOLVER = CN()
 _C.SOLVER.SEED = 1234
 _C.SOLVER.MARGIN = 0.3
-
-# stage1
-# ---------------------------------------------------------------------------- #
+_C.SOLVER.IMS_PER_BATCH = 64
 # Name of optimizer
-_C.SOLVER.STAGE1 = CN()
-
-_C.SOLVER.STAGE1.IMS_PER_BATCH = 64
-
-_C.SOLVER.STAGE1.OPTIMIZER_NAME = "Adam"
+_C.SOLVER.OPTIMIZER_NAME = "Adam"
 # Number of max epoches
-_C.SOLVER.STAGE1.MAX_EPOCHS = 100
+_C.SOLVER.MAX_EPOCHS = 100
 # Base learning rate
-_C.SOLVER.STAGE1.BASE_LR = 3e-4
-# Momentum
-_C.SOLVER.STAGE1.MOMENTUM = 0.9
-
-# Settings of weight decay
-_C.SOLVER.STAGE1.WEIGHT_DECAY = 0.0005
-_C.SOLVER.STAGE1.WEIGHT_DECAY_BIAS = 0.0005
-
-# warm up factor
-_C.SOLVER.STAGE1.WARMUP_FACTOR = 0.01
-#  warm up epochs
-_C.SOLVER.STAGE1.WARMUP_EPOCHS = 5
-_C.SOLVER.STAGE1.WARMUP_LR_INIT = 0.01
-_C.SOLVER.STAGE1.LR_MIN = 0.000016
-
-_C.SOLVER.STAGE1.WARMUP_ITERS = 500
-# method of warm up, option: 'constant','linear'
-_C.SOLVER.STAGE1.WARMUP_METHOD = "linear"
-
-_C.SOLVER.STAGE1.COSINE_MARGIN = 0.5
-_C.SOLVER.STAGE1.COSINE_SCALE = 30
-
-# epoch number of saving checkpoints
-_C.SOLVER.STAGE1.CHECKPOINT_PERIOD = 10
-# iteration of display training log
-_C.SOLVER.STAGE1.LOG_PERIOD = 100
-# epoch number of validation
-# Number of images per batch
-# This is global, so if we have 8 GPUs and IMS_PER_BATCH = 128, each GPU will
-# contain 16 images per batch
-# _C.SOLVER.STAGE1.IMS_PER_BATCH = 64
-_C.SOLVER.STAGE1.EVAL_PERIOD = 10
-
-# ---------------------------------------------------------------------------- #
-# Solver
-# stage1
-# ---------------------------------------------------------------------------- #
-_C.SOLVER.STAGE2 = CN()
-
-_C.SOLVER.STAGE2.IMS_PER_BATCH = 64
-# Name of optimizer
-_C.SOLVER.STAGE2.OPTIMIZER_NAME = "Adam"
-# Number of max epoches
-_C.SOLVER.STAGE2.MAX_EPOCHS = 100
-# Base learning rate
-_C.SOLVER.STAGE2.BASE_LR = 3e-4
+_C.SOLVER.BASE_LR = 3e-4
 # Whether using larger learning rate for fc layer
-_C.SOLVER.STAGE2.LARGE_FC_LR = False
+_C.SOLVER.LARGE_FC_LR = False
 # Factor of learning bias
-_C.SOLVER.STAGE2.BIAS_LR_FACTOR = 1
+_C.SOLVER.BIAS_LR_FACTOR = 1
 # Momentum
-_C.SOLVER.STAGE2.MOMENTUM = 0.9
+_C.SOLVER.MOMENTUM = 0.9
 # Margin of triplet loss
 # Learning rate of SGD to learn the centers of center loss
-_C.SOLVER.STAGE2.CENTER_LR = 0.5
+_C.SOLVER.CENTER_LR = 0.5
 # Balanced weight of center loss
-_C.SOLVER.STAGE2.CENTER_LOSS_WEIGHT = 0.0005
+_C.SOLVER.CENTER_LOSS_WEIGHT = 0.0005
 
 # Settings of weight decay
-_C.SOLVER.STAGE2.WEIGHT_DECAY = 0.0005
-_C.SOLVER.STAGE2.WEIGHT_DECAY_BIAS = 0.0005
+_C.SOLVER.WEIGHT_DECAY = 0.0005
+_C.SOLVER.WEIGHT_DECAY_BIAS = 0.0005
 
 # decay rate of learning rate
-_C.SOLVER.STAGE2.GAMMA = 0.1
+_C.SOLVER.GAMMA = 0.1
 # decay step of learning rate
-_C.SOLVER.STAGE2.STEPS = (40, 70)
+_C.SOLVER.STEPS = (40, 70)
 # warm up factor
-_C.SOLVER.STAGE2.WARMUP_FACTOR = 0.01
+_C.SOLVER.WARMUP_FACTOR = 0.01
 #  warm up epochs
-_C.SOLVER.STAGE2.WARMUP_EPOCHS = 5
-_C.SOLVER.STAGE2.WARMUP_LR_INIT = 0.01
-_C.SOLVER.STAGE2.LR_MIN = 0.000016
+_C.SOLVER.WARMUP_EPOCHS = 5
+_C.SOLVER.WARMUP_LR_INIT = 0.01
+_C.SOLVER.LR_MIN = 0.000016
 
 
-_C.SOLVER.STAGE2.WARMUP_ITERS = 500
+_C.SOLVER.WARMUP_ITERS = 500
 # method of warm up, option: 'constant','linear'
-_C.SOLVER.STAGE2.WARMUP_METHOD = "linear"
+_C.SOLVER.WARMUP_METHOD = "linear"
 
-_C.SOLVER.STAGE2.COSINE_MARGIN = 0.5
-_C.SOLVER.STAGE2.COSINE_SCALE = 30
+_C.SOLVER.COSINE_MARGIN = 0.5
+_C.SOLVER.COSINE_SCALE = 30
 
 # epoch number of saving checkpoints
-_C.SOLVER.STAGE2.CHECKPOINT_PERIOD = 10
+_C.SOLVER.CHECKPOINT_PERIOD = 10
 # iteration of display training log
-_C.SOLVER.STAGE2.LOG_PERIOD = 100
+_C.SOLVER.LOG_PERIOD = 100
 # epoch number of validation
-_C.SOLVER.STAGE2.EVAL_PERIOD = 10
+_C.SOLVER.EVAL_PERIOD = 10
 # Number of images per batch
 # This is global, so if we have 8 GPUs and IMS_PER_BATCH = 128, each GPU will
 # contain 16 images per batch

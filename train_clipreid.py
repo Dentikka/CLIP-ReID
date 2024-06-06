@@ -1,12 +1,11 @@
 from utils.logger import setup_logger
 from datasets.make_dataloader_clipreid import make_dataloader
 from model.make_model_clipreid import make_model
-from solver.make_optimizer_prompt import make_optimizer_1stage, make_optimizer_2stage
+from solver.make_optimizer import make_optimizer
 from solver.scheduler_factory import create_scheduler
 from solver.lr_scheduler import WarmupMultiStepLR
 from loss.make_loss import make_loss
-from processor.processor_clipreid_stage1 import do_train_stage1
-from processor.processor_clipreid_stage2 import do_train_stage2
+from processor.processor_clipreid import do_train
 import random
 import torch
 import numpy as np
@@ -65,25 +64,25 @@ if __name__ == '__main__':
     if cfg.MODEL.DIST_TRAIN:
         torch.distributed.init_process_group(backend='nccl', init_method='env://')
 
-    train_loader_stage2, train_loader_stage1, val_loader, num_query, num_classes, camera_num, view_num, attributes_train, attribute_names = make_dataloader(cfg)
+    train_loader, val_loader, num_query, num_classes, camera_num, view_num, attributes_train, attribute_names = make_dataloader(cfg)
 
     model = make_model(cfg, num_class=num_classes, camera_num=camera_num, view_num = view_num, attributes = attributes_train, attribute_names = attribute_names)
 
     loss_func, center_criterion = make_loss(cfg, num_classes=num_classes)
 
-    optimizer_2stage, optimizer_center_2stage = make_optimizer_2stage(cfg, model, center_criterion)
-    scheduler_2stage = WarmupMultiStepLR(optimizer_2stage, cfg.SOLVER.STAGE2.STEPS, cfg.SOLVER.STAGE2.GAMMA, cfg.SOLVER.STAGE2.WARMUP_FACTOR,
-                                  cfg.SOLVER.STAGE2.WARMUP_ITERS, cfg.SOLVER.STAGE2.WARMUP_METHOD)
+    optimizer, optimizer_center = make_optimizer(cfg, model, center_criterion)
+    scheduler = WarmupMultiStepLR(optimizer, cfg.SOLVER.STEPS, cfg.SOLVER.GAMMA, cfg.SOLVER.WARMUP_FACTOR,
+                                  cfg.SOLVER.WARMUP_ITERS, cfg.SOLVER.WARMUP_METHOD)
 
-    do_train_stage2(
+    do_train(
         cfg,
         model,
         center_criterion,
-        train_loader_stage2,
+        train_loader,
         val_loader,
-        optimizer_2stage,
-        optimizer_center_2stage,
-        scheduler_2stage,
+        optimizer,
+        optimizer_center,
+        scheduler,
         loss_func,
         num_query, args.local_rank
     )

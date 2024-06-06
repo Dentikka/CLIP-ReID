@@ -72,10 +72,10 @@ def make_dataloader(cfg):
     if 'triplet' in cfg.DATALOADER.SAMPLER:
         if cfg.MODEL.DIST_TRAIN:
             print('DIST_TRAIN START')
-            mini_batch_size = cfg.SOLVER.STAGE2.IMS_PER_BATCH // dist.get_world_size()
-            data_sampler = RandomIdentitySampler_DDP(dataset.train, cfg.SOLVER.STAGE2.IMS_PER_BATCH, cfg.DATALOADER.NUM_INSTANCE)
+            mini_batch_size = cfg.SOLVE.IMS_PER_BATCH // dist.get_world_size()
+            data_sampler = RandomIdentitySampler_DDP(dataset.train, cfg.SOLVER.IMS_PER_BATCH, cfg.DATALOADER.NUM_INSTANCE)
             batch_sampler = torch.utils.data.sampler.BatchSampler(data_sampler, mini_batch_size, True)
-            train_loader_stage2 = torch.utils.data.DataLoader(
+            train_loader = torch.utils.data.DataLoader(
                 train_set,
                 num_workers=num_workers,
                 batch_sampler=batch_sampler,
@@ -83,15 +83,15 @@ def make_dataloader(cfg):
                 pin_memory=True,
             )
         else:
-            train_loader_stage2 = DataLoader(
-                train_set, batch_size=cfg.SOLVER.STAGE2.IMS_PER_BATCH,
-                sampler=RandomIdentitySampler(dataset.train, cfg.SOLVER.STAGE2.IMS_PER_BATCH, cfg.DATALOADER.NUM_INSTANCE),
+            train_loader = DataLoader(
+                train_set, batch_size=cfg.SOLVER.IMS_PER_BATCH,
+                sampler=RandomIdentitySampler(dataset.train, cfg.SOLVER.IMS_PER_BATCH, cfg.DATALOADER.NUM_INSTANCE),
                 num_workers=num_workers, collate_fn=train_collate_fn
             )
     elif cfg.DATALOADER.SAMPLER == 'softmax':
         print('using softmax sampler')
-        train_loader_stage2 = DataLoader(
-            train_set, batch_size=cfg.SOLVER.STAGE2.IMS_PER_BATCH, shuffle=True, num_workers=num_workers,
+        train_loader = DataLoader(
+            train_set, batch_size=cfg.SOLVER.IMS_PER_BATCH, shuffle=True, num_workers=num_workers,
             collate_fn=train_collate_fn
         )
     else:
@@ -103,8 +103,5 @@ def make_dataloader(cfg):
         val_set, batch_size=cfg.TEST.IMS_PER_BATCH, shuffle=False, num_workers=num_workers,
         collate_fn=val_collate_fn
     )
-    train_loader_stage1 = DataLoader(
-        train_set_normal, batch_size=cfg.SOLVER.STAGE1.IMS_PER_BATCH, shuffle=True, num_workers=num_workers,
-        collate_fn=train_collate_fn
-    )
-    return train_loader_stage2, train_loader_stage1, val_loader, len(dataset.query), num_classes, cam_num, view_num, attributes_train, attribute_names
+
+    return train_loader, val_loader, len(dataset.query), num_classes, cam_num, view_num, attributes_train, attribute_names

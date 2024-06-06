@@ -10,23 +10,23 @@ import torch.distributed as dist
 from torch.nn import functional as F
 from loss.supcontrast import SupConLoss
 
-def do_train_stage2(cfg,
+def do_train(cfg,
              model,
              center_criterion,
-             train_loader_stage2,
+             train_loader,
              val_loader,
              optimizer,
              optimizer_center,
              scheduler,
              loss_fn,
              num_query, local_rank):
-    log_period = cfg.SOLVER.STAGE2.LOG_PERIOD
-    checkpoint_period = cfg.SOLVER.STAGE2.CHECKPOINT_PERIOD
-    eval_period = cfg.SOLVER.STAGE2.EVAL_PERIOD
+    log_period = cfg.SOLVER.LOG_PERIOD
+    checkpoint_period = cfg.SOLVER.CHECKPOINT_PERIOD
+    eval_period = cfg.SOLVER.EVAL_PERIOD
     instance = cfg.DATALOADER.NUM_INSTANCE
 
     device = "cuda"
-    epochs = cfg.SOLVER.STAGE2.MAX_EPOCHS
+    epochs = cfg.SOLVER.MAX_EPOCHS
 
     logger = logging.getLogger("transreid.train")
     logger.info('start training')
@@ -53,7 +53,7 @@ def do_train_stage2(cfg,
     all_start_time = time.monotonic()
 
     # train
-    batch = cfg.SOLVER.STAGE2.IMS_PER_BATCH
+    batch = cfg.SOLVER.IMS_PER_BATCH
     i_ter = num_classes // batch
     left = num_classes-batch* (num_classes//batch)
     if left != 0 :
@@ -79,7 +79,7 @@ def do_train_stage2(cfg,
         scheduler.step()
 
         model.train()
-        for n_iter, (img, vid, target_cam, target_view) in enumerate(train_loader_stage2):
+        for n_iter, (img, vid, target_cam, target_view) in enumerate(train_loader):
             optimizer.zero_grad()
             optimizer_center.zero_grad()
             img = img.to(device)
@@ -116,7 +116,7 @@ def do_train_stage2(cfg,
             torch.cuda.synchronize()
             if (n_iter + 1) % log_period == 0:
                 logger.info("Epoch[{}] Iteration[{}/{}] Loss: {:.3f}, Acc: {:.3f}, Base Lr: {:.2e}"
-                            .format(epoch, (n_iter + 1), len(train_loader_stage2),
+                            .format(epoch, (n_iter + 1), len(train_loader),
                                     loss_meter.avg, acc_meter.avg, scheduler.get_lr()[0]))
 
         end_time = time.time()
@@ -125,7 +125,7 @@ def do_train_stage2(cfg,
             pass
         else:
             logger.info("Epoch {} done. Time per batch: {:.3f}[s] Speed: {:.1f}[samples/s]"
-                    .format(epoch, time_per_batch, train_loader_stage2.batch_size / time_per_batch))
+                    .format(epoch, time_per_batch, train_loader.batch_size / time_per_batch))
 
         if epoch % checkpoint_period == 0:
             if cfg.MODEL.DIST_TRAIN:

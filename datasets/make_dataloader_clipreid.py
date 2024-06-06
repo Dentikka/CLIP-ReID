@@ -63,6 +63,7 @@ def make_dataloader(cfg):
     
     attributes_train = dataset.attributes_train
     attribute_names = dataset.attribute_names
+    label2pid = dataset.label2pid
     train_set = ImageDataset(dataset.train, train_transforms)
     train_set_normal = ImageDataset(dataset.train, val_transforms)
     num_classes = dataset.num_train_pids
@@ -104,4 +105,4 @@ def make_dataloader(cfg):
         collate_fn=val_collate_fn
     )
 
-    return train_loader, val_loader, len(dataset.query), num_classes, cam_num, view_num, attributes_train, attribute_names
+    return train_loader, val_loader, len(dataset.query), num_classes, cam_num, view_num, attributes_train, attribute_names, label2pid

@@ -64,9 +64,9 @@ if __name__ == '__main__':
     if cfg.MODEL.DIST_TRAIN:
         torch.distributed.init_process_group(backend='nccl', init_method='env://')
 
-    train_loader, val_loader, num_query, num_classes, camera_num, view_num, attributes_train, attribute_names = make_dataloader(cfg)
+    train_loader, val_loader, num_query, num_classes, camera_num, view_num, attributes_train, attribute_names, label2pid = make_dataloader(cfg)
 
-    model = make_model(cfg, num_class=num_classes, camera_num=camera_num, view_num = view_num, attributes = attributes_train, attribute_names = attribute_names)
+    model = make_model(cfg, num_class=num_classes, camera_num=camera_num, view_num = view_num, attributes = attributes_train, attribute_names = attribute_names, label2pid = label2pid)
 
     loss_func, center_criterion = make_loss(cfg, num_classes=num_classes)
 

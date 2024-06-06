@@ -50,7 +50,7 @@ class TextEncoder(nn.Module):
         return x
 
 class build_transformer(nn.Module):
-    def __init__(self, num_classes, camera_num, view_num, attributes, attribute_names, cfg):
+    def __init__(self, num_classes, camera_num, view_num, attributes, attribute_names, label2pid, cfg):
         super(build_transformer, self).__init__()
         self.model_name = cfg.MODEL.NAME
         self.cos_layer = cfg.MODEL.COS_LAYER
@@ -101,12 +101,17 @@ class build_transformer(nn.Module):
             print('camera number is : {}'.format(view_num))
 
         dataset_name = cfg.DATASETS.NAMES
-        self.prompt_processor = PromptProcessor(attributes, attribute_names, clip_model.dtype, clip_model.token_embedding)
+        self.prompt_processor = PromptProcessor(attributes, attribute_names, label2pid, clip_model.dtype, clip_model.token_embedding)
         self.text_encoder = TextEncoder(clip_model)
 
     def forward(self, x = None, label=None, get_image = False, get_text = False, cam_label= None, view_label=None):
         if get_text == True:
-            prompt_embeddings, tokenized_prompts = self.prompt_processor(label) 
+            prompts, prompt_embeddings, tokenized_prompts = self.prompt_processor(label) 
+            for lb, pr in zip(label.tolist()[:5], prompts[:5]):
+                print(self.prompt_processor.label2pid[lb])
+                print(pr)
+                print('------')
+            import ipdb; ipdb.set_trace()
             text_features = self.text_encoder(prompt_embeddings, tokenized_prompts)
             return text_features
 
@@ -166,8 +171,8 @@ class build_transformer(nn.Module):
         print('Loading pretrained model for finetuning from {}'.format(model_path))
 
 
-def make_model(cfg, num_class, camera_num, view_num, attributes, attribute_names):
-    model = build_transformer(num_class, camera_num, view_num, attributes, attribute_names, cfg)
+def make_model(cfg, num_class, camera_num, view_num, attributes, attribute_names, label2pid):
+    model = build_transformer(num_class, camera_num, view_num, attributes, attribute_names, label2pid, cfg)
     return model
 
 
@@ -190,28 +195,30 @@ def load_clip_to_cpu(backbone_name, h_resolution, w_resolution, vision_stride_si
 
 
 class PromptProcessor():
-    def __init__(self, attributes, attribute_names, dtype, token_embedding):
+    def __init__(self, attributes, attribute_names, label2pid, dtype, token_embedding):
         super().__init__()
 
         self.attributes = attributes
         self.attribute_names = attribute_names
+        self.label2pid = label2pid
 
         self.dtype = dtype
         self.token_embedding = token_embedding
 
     def __call__(self, label):
         
-        tokenized_prompts = []
+        prompts, tokenized_prompts = [], []
         for lb in label.tolist():
-            att = self.attributes.loc[lb].values
+            att = self.attributes.loc[self.label2pid[lb]].values
             prompt = self.attribute_to_description(att)
+            prompts.append(prompt)
             tokenized_prompts.append(clip.tokenize(prompt).cuda())
         tokenized_prompts = torch.cat(tokenized_prompts)
 
         with torch.no_grad():
             prompt_embeddings = self.token_embedding(tokenized_prompts).type(self.dtype)
 
-        return prompt_embeddings, tokenized_prompts
+        return prompts, prompt_embeddings, tokenized_prompts
     
     def attribute_to_description(self, att):
         desc = 'A photo of a'

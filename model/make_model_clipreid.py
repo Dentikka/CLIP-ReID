@@ -223,40 +223,45 @@ class PromptProcessor():
     def attribute_to_description(self, att):
         desc = 'A photo of a'
         
-        a = att[0]
-        desc += f' {self.attribute_names['age'][a]}'
+        age = att[0]
+        desc += f' {self.attribute_names['age'][age]}'
+        if age in [1, 2]:
+            gender = 100
+        else:
+            gender = 0
+            desc = desc.replace(' a ', ' an ')
         
-        a = att[14]
-        desc += f' {self.attribute_names['gender'][a]}'
+        gender += att[14]
+        desc += f' {self.attribute_names['gender'][gender]}'
 
-        a = att[15]
-        desc += f' with {self.attribute_names['hair'][a]}'
+        hair = att[15]
+        desc += f' with {self.attribute_names['hair'][hair]}'
 
-        a = np.argmax(att[19:27])
-        desc += f' wearing {self.attribute_names['upper body cloth color'][a]}'
+        upper_body_cloth_color = np.argmax(att[19:27])
+        desc += f' wearing {self.attribute_names['upper body cloth color'][upper_body_cloth_color]}'
 
-        a = att[18]
-        desc += f' clothes with {self.attribute_names['sleeve'][a]}'
+        sleeve = att[18]
+        desc += f' clothes with {self.attribute_names['sleeve'][sleeve]}'
 
-        a = att[4]
-        desc += f' and a {self.attribute_names['lower body cloth length'][a]}'
+        lower_body_cloth_length = att[4]
+        desc += f' and a {self.attribute_names['lower body cloth length'][lower_body_cloth_length]}'
 
-        a = np.argmax(att[5:14])
-        desc += f' {self.attribute_names['lower body cloth color'][a]}'
+        lower_body_cloth_color = np.argmax(att[5:14])
+        desc += f' {self.attribute_names['lower body cloth color'][lower_body_cloth_color]}'
 
-        a = att[3]
-        desc += f' {self.attribute_names['lower body cloth type'][a]}'
+        lower_body_cloth_type = att[3]
+        desc += f' {self.attribute_names['lower body cloth type'][lower_body_cloth_type]}'
 
-        a = att[17]
-        desc += f' {self.attribute_names['hat'][a]}'
+        hat = att[17]
+        desc += f' {self.attribute_names['hat'][hat]}'
 
-        a = att[17]
-        desc += f' {self.attribute_names['backpack'][a]}'
+        backpack = att[1]
+        desc += f' {self.attribute_names['backpack'][backpack]}'
 
-        a = att[17]
-        desc += f' {self.attribute_names['bag'][a]}'
+        bag = att[12]
+        desc += f' {self.attribute_names['bag'][bag]}'
 
-        a = att[17]
-        desc += f' {self.attribute_names['handbag'][a]}'
+        handbag = att[16]
+        desc += f' {self.attribute_names['handbag'][handbag]}'
 
         return desc

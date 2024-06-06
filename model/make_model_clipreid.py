@@ -243,15 +243,23 @@ class PromptProcessor():
         desc += f' wearing {self.attribute_names['upper body cloth color'][upper_body_cloth_color]}'
 
         sleeve = att[18]
-        desc += f' clothes with {self.attribute_names['sleeve'][sleeve]}'
+        if sleeve == 2:
+            desc = desc.replace(' wearing ', ' wearing a ')
+            desc += ' T-shirt'
+        else:
+            desc += f' clothes with {self.attribute_names['sleeve'][sleeve]}'
 
         lower_body_cloth_length = att[4]
-        desc += f' and a {self.attribute_names['lower body cloth length'][lower_body_cloth_length]}'
-
         lower_body_cloth_color = np.argmax(att[5:14])
-        desc += f' {self.attribute_names['lower body cloth color'][lower_body_cloth_color]}'
-
         lower_body_cloth_type = att[3]
+        if lower_body_cloth_type == 2:
+            desc += ' and'
+            if lower_body_cloth_length == 2:
+                lower_body_cloth_type += 100
+        else:
+            desc += ' and a'
+            desc += f' {self.attribute_names['lower body cloth length'][lower_body_cloth_length]}'
+        desc += f' {self.attribute_names['lower body cloth color'][lower_body_cloth_color]}'
         desc += f' {self.attribute_names['lower body cloth type'][lower_body_cloth_type]}'
 
         hat = att[17]

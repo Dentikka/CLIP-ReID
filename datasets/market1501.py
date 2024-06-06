@@ -36,8 +36,9 @@ attribute_names = {
         2: 'short'
     },
     'lower body cloth type': {
-        1: 'dress',
-        2: 'pants'
+        1: 'skirt',
+        2: 'pants',
+        2+100: 'shorts'
     },
     'hat': {
         1: '',

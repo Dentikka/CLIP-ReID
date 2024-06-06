@@ -1,3 +1,4 @@
+import os.path as osp
 import torch
 import torch.nn as nn
 import numpy as np
@@ -107,11 +108,12 @@ class build_transformer(nn.Module):
     def forward(self, x = None, label=None, get_image = False, get_text = False, cam_label= None, view_label=None):
         if get_text == True:
             prompts, prompt_embeddings, tokenized_prompts = self.prompt_processor(label) 
-            for lb, pr in zip(label.tolist()[:5], prompts[:5]):
-                print(self.prompt_processor.label2pid[lb])
-                print(pr)
-                print('------')
-            import ipdb; ipdb.set_trace()
+            debug_dir_path = '/home/shvejkinde/thesis/notebooks/attributes/attributes-annotations-debug'
+            self.prompt_processor.attributes.to_csv(osp.join(debug_dir_path, 'attributes.csv'))
+            with open(osp.join(debug_dir_path, 'descriptions.txt'), 'w') as f:
+                for lb, pr in zip(label.tolist()[:5], prompts[:5]):
+                    f.write(f'{self.prompt_processor.label2pid[lb]}\t{pr}\n')
+            raise NotImplementedError
             text_features = self.text_encoder(prompt_embeddings, tokenized_prompts)
             return text_features
 
@@ -209,7 +211,7 @@ class PromptProcessor():
         
         prompts, tokenized_prompts = [], []
         for lb in label.tolist():
-            att = self.attributes.loc[self.label2pid[lb]].values
+            att = self.attributes.loc[lb].values
             prompt = self.attribute_to_description(att)
             prompts.append(prompt)
             tokenized_prompts.append(clip.tokenize(prompt).cuda())

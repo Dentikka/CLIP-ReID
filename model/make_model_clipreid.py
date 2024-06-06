@@ -37,8 +37,8 @@ class TextEncoder(nn.Module):
         self.text_projection = clip_model.text_projection
         self.dtype = clip_model.dtype
 
-    def forward(self, prompts, tokenized_prompts): 
-        x = prompts + self.positional_embedding.type(self.dtype) 
+    def forward(self, prompt_embeddings, tokenized_prompts): 
+        x = prompt_embeddings + self.positional_embedding.type(self.dtype) 
         x = x.permute(1, 0, 2)  # NLD -> LND 
         x = self.transformer(x) 
         x = x.permute(1, 0, 2)  # LND -> NLD
@@ -106,8 +106,8 @@ class build_transformer(nn.Module):
 
     def forward(self, x = None, label=None, get_image = False, get_text = False, cam_label= None, view_label=None):
         if get_text == True:
-            prompts = self.prompt_processor(label) 
-            text_features = self.text_encoder(prompts, self.prompt_learner.tokenized_prompts)
+            prompt_embeddings, tokenized_prompts = self.prompt_processor(label) 
+            text_features = self.text_encoder(prompt_embeddings, tokenized_prompts)
             return text_features
 
         if get_image == True:
@@ -205,12 +205,14 @@ class PromptProcessor():
         for lb in label:
             att = self.attributes.loc[lb].values
             prompt = self.attribute_to_description(att)
-            tokenized_prompts.append(clip.tokenize(prompt).cuda() )
+            tokenized_prompts.append(clip.tokenize(prompt).cuda())
+        tokenized_prompts = torch.stack(tokenized_prompts)
 
         with torch.no_grad():
-            embeddings = self.token_embedding(tokenized_prompts).type(self.dtype)
+            prompt_embeddings = self.token_embedding(tokenized_prompts).type(self.dtype)
 
-        return embeddings
+        assert len(prompt_embeddings) == len(tokenized_prompts)
+        return prompt_embeddings, tokenized_prompts
     
     def attribute_to_description(self, att):
         desc = 'A photo of a'

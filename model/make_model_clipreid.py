@@ -202,16 +202,15 @@ class PromptProcessor():
     def __call__(self, label):
         
         tokenized_prompts = []
-        for lb in label:
+        for lb in label.tolist():
             att = self.attributes.loc[lb].values
             prompt = self.attribute_to_description(att)
             tokenized_prompts.append(clip.tokenize(prompt).cuda())
-        tokenized_prompts = torch.stack(tokenized_prompts)
+        tokenized_prompts = torch.cat(tokenized_prompts)
 
         with torch.no_grad():
             prompt_embeddings = self.token_embedding(tokenized_prompts).type(self.dtype)
 
-        assert len(prompt_embeddings) == len(tokenized_prompts)
         return prompt_embeddings, tokenized_prompts
     
     def attribute_to_description(self, att):
@@ -227,13 +226,13 @@ class PromptProcessor():
         desc += f' with {self.attribute_names['hair'][a]}'
 
         a = np.argmax(att[19:27])
-        desc += f'wearing {self.attribute_names['upper body cloth color'][a]}'
+        desc += f' wearing {self.attribute_names['upper body cloth color'][a]}'
 
         a = att[18]
         desc += f' clothes with {self.attribute_names['sleeve'][a]}'
 
         a = att[4]
-        desc += f' and a {self.attribute_names['down'][a]}'
+        desc += f' and a {self.attribute_names['lower body cloth length'][a]}'
 
         a = np.argmax(att[5:14])
         desc += f' {self.attribute_names['lower body cloth color'][a]}'
@@ -252,3 +251,5 @@ class PromptProcessor():
 
         a = att[17]
         desc += f' {self.attribute_names['handbag'][a]}'
+
+        return desc

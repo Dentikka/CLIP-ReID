@@ -19,7 +19,9 @@ import pickle
 attribute_names = {
     'gender': {
         1: 'man',
-        2: 'woman'
+        1+100: 'boy',
+        2: 'woman',
+        2+100: 'girl'
     },
     'hair': {
         1: 'short hair',
@@ -38,20 +40,20 @@ attribute_names = {
         2: 'pants'
     },
     'hat': {
-        1: 'without hat',
-        2: 'wearing hat'
+        1: '',
+        2: 'wearing a hat'
     },
     'backpack': {
-        1: 'without backpack',
-        2: 'carrying backpack'
+        1: '',
+        2: 'carrying a backpack'
     },
     'bag': {
-        1: 'without bag',
-        2: 'carrying bag'
+        1: '',
+        2: 'carrying a bag'
     },
     'handbag': {
-        1: 'without handbag',
-        2: 'carrying handbag'
+        1: '',
+        2: 'carrying a handbag'
     },
     'age': {
         1: 'young',

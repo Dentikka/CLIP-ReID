@@ -95,7 +95,7 @@ def hard_example_mining_attributes(dist_mat, labels, attributes_data, return_ind
     # for negative samples distances are adjusted with respect to attribute consistency
     # so, we allow negative samples with simillar attribute set be closer to the anchor
     dist_an, relative_n_inds = torch.min(
-        torch.where(is_neg, dist_mat / torch.maximum(attribute_mask, torch.tensor(1)), torch.inf), 1, keepdim=True)
+        torch.where(is_neg, dist_mat * torch.maximum(attribute_mask, torch.tensor(1)), torch.inf), 1, keepdim=True)
     # shape [N]
     dist_ap = dist_ap.squeeze(1)
     dist_an = dist_an.squeeze(1)

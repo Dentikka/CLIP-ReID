@@ -61,7 +61,7 @@ def make_dataloader(cfg):
 
     num_workers = cfg.DATALOADER.NUM_WORKERS
 
-    dataset = __factory[cfg.DATASETS.NAMES](root=cfg.DATASETS.ROOT_DIR)
+    dataset = __factory[cfg.DATASETS.NAMES](root=cfg.DATASETS.ROOT_DIR, attributes_dir=cfg.DATASETS.ATTRIBUTES_DIR)
     
     attributes_train = dataset.attributes_train
     train_set = ImageDataset(dataset.train, has_annos=True, transform=train_transforms)

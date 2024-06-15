@@ -76,10 +76,12 @@ class KeypointsEncoder(nn.Module):
     def __init__(self, cfg):
         super().__init__()
         self.hrnet = mmpose_init_model(cfg.MODEL.HRNET_CFG_PATH, cfg.MODEL.HRNET_PRETRAINED_PATH)
+        self.pool = nn.AdaptiveAvgPool2d((8, 4))
 
     def forward(self, x):
-        x = self.hrnet.forward_features(x)
-        return x
+        x = self.hrnet(x, data_samples=None, mode='tensor')
+        x = self.pool(x)
+        return x.flatten(start_dim=1)
 
 
 class build_transformer(nn.Module):
@@ -142,7 +144,8 @@ class build_transformer(nn.Module):
         self.keypoints_encoder.eval()
         self.keypoints_batchnormvec = BatchNormVector()
 
-        self.image_keypoints_projector = nn.Linear(2*self.in_planes_proj, self.in_planes_proj)
+        self.kps_planes_proj = 544
+        self.image_keypoints_projector = nn.Linear(self.in_planes_proj+self.kps_planes_proj, self.in_planes_proj)
 
     def forward(self, x = None, label=None, get_image = False, get_text = False, cam_label= None, view_label=None):
         if get_text == True:

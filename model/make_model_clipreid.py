@@ -29,6 +29,27 @@ def weights_init_classifier(m):
             nn.init.constant_(m.bias, 0.0)
 
 
+class BatchNormVector(nn.Module):
+    """
+    Scale inputs by batch-learnable vector norm
+    """
+    def __init__(self, eps=1e-5, momentum=0.1):
+        super(BatchNormVector, self).__init__()
+        self.eps = eps
+        self.momentum = momentum
+        self.register_buffer('running_norm', torch.tensor(1))
+
+    def forward(self, x):
+        if self.training:
+            batch_norm = torch.norm(x, p=2, dim=-1).mean()
+            self.running_norm = (1 - self.momentum) * self.running_norm + self.momentum * batch_norm
+            norm = batch_norm
+        else:
+            norm = self.running_norm
+        x_hat = x / (norm + self.eps)
+        return x_hat
+
+
 class TextEncoder(nn.Module):
     def __init__(self, clip_model):
         super().__init__()
@@ -49,6 +70,17 @@ class TextEncoder(nn.Module):
         # take features from the eot embedding (eot_token is the highest number in each sequence)
         x = x[torch.arange(x.shape[0]), tokenized_prompts.argmax(dim=-1)] @ self.text_projection 
         return x
+    
+
+class KeypointsEncoder(nn.Module):
+    def __init__(self, cfg):
+        super().__init__()
+        self.hrnet = mmpose_init_model(cfg.MODEL.HRNET_CFG_PATH, cfg.MODEL.HRNET_PRETRAINED_PATH)
+
+    def forward(self, x):
+        x = self.hrnet.forward_features(x)
+        return x
+
 
 class build_transformer(nn.Module):
     def __init__(self, num_classes, camera_num, view_num, cfg):
@@ -87,6 +119,7 @@ class build_transformer(nn.Module):
         clip_model.to("cuda")
 
         self.image_encoder = clip_model.visual
+        self.image_batchnormvec = BatchNormVector()
 
         if cfg.MODEL.SIE_CAMERA and cfg.MODEL.SIE_VIEW:
             self.cv_embed = nn.Parameter(torch.zeros(camera_num * view_num, self.in_planes))
@@ -105,7 +138,11 @@ class build_transformer(nn.Module):
         self.prompt_learner = PromptLearner(num_classes, dataset_name, clip_model.dtype, clip_model.token_embedding)
         self.text_encoder = TextEncoder(clip_model)
 
-        self.keypoints_encoder = mmpose_init_model(cfg.MODEL.HRNET_CFG_PATH, cfg.MODEL.HRNET_PRETRAINED_PATH)
+        self.keypoints_encoder = KeypointsEncoder(cfg)
+        self.keypoints_encoder.eval()
+        self.keypoints_batchnormvec = BatchNormVector()
+
+        self.image_keypoints_projector = nn.Linear(2*self.in_planes_proj, self.in_planes_proj)
 
     def forward(self, x = None, label=None, get_image = False, get_text = False, cam_label= None, view_label=None):
         if get_text == True:
@@ -121,10 +158,16 @@ class build_transformer(nn.Module):
                 return image_features_proj[:,0]
         
         if self.model_name == 'RN50':
-            image_features_last, image_features, image_features_proj = self.image_encoder(x) 
+            image_features_last, image_features, image_features_proj = self.image_encoder(x)
             img_feature_last = nn.functional.avg_pool2d(image_features_last, image_features_last.shape[2:4]).view(x.shape[0], -1) 
             img_feature = nn.functional.avg_pool2d(image_features, image_features.shape[2:4]).view(x.shape[0], -1) 
             img_feature_proj = image_features_proj[0]
+            with torch.no_grad():
+                kps_feature_proj = self.keypoints_encoder(x)
+            img_feature_proj = self.image_batchnormvec(img_feature_proj)
+            kps_feature_proj = self.keypoints_batchnormvec(kps_feature_proj)
+            img_feature_proj = torch.cat([img_feature_proj, kps_feature_proj], dim=1)
+            img_feature_proj = self.image_keypoints_projector(img_feature_proj)
 
         elif self.model_name == 'ViT-B-16':
             if cam_label != None and view_label!=None:

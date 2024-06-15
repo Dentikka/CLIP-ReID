@@ -147,7 +147,7 @@ class build_transformer(nn.Module):
         self.kps_planes_proj = 544
         self.image_keypoints_projector = nn.Linear(self.in_planes_proj+self.kps_planes_proj, self.in_planes_proj)
 
-    def forward(self, x = None, label=None, get_image = False, get_text = False, cam_label= None, view_label=None):
+    def forward(self, x = None, label=None, keypoints=False, get_image = False, get_text = False, cam_label= None, view_label=None):
         if get_text == True:
             prompts = self.prompt_learner(label) 
             text_features = self.text_encoder(prompts, self.prompt_learner.tokenized_prompts)
@@ -165,12 +165,13 @@ class build_transformer(nn.Module):
             img_feature_last = nn.functional.avg_pool2d(image_features_last, image_features_last.shape[2:4]).view(x.shape[0], -1) 
             img_feature = nn.functional.avg_pool2d(image_features, image_features.shape[2:4]).view(x.shape[0], -1) 
             img_feature_proj = image_features_proj[0]
-            with torch.no_grad():
-                kps_feature_proj = self.keypoints_encoder(x)
-            img_feature_proj = self.image_batchnormvec(img_feature_proj)
-            kps_feature_proj = self.keypoints_batchnormvec(kps_feature_proj)
-            img_feature_proj = torch.cat([img_feature_proj, kps_feature_proj], dim=1)
-            img_feature_proj = self.image_keypoints_projector(img_feature_proj)
+            if keypoints:
+                with torch.no_grad():
+                    kps_feature_proj = self.keypoints_encoder(x)
+                img_feature_proj = self.image_batchnormvec(img_feature_proj)
+                kps_feature_proj = self.keypoints_batchnormvec(kps_feature_proj)
+                img_feature_proj = torch.cat([img_feature_proj, kps_feature_proj], dim=1)
+                img_feature_proj = self.image_keypoints_projector(img_feature_proj)
 
         elif self.model_name == 'ViT-B-16':
             if cam_label != None and view_label!=None:

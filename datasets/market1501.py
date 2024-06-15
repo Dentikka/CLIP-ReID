@@ -28,7 +28,7 @@ class Market1501(BaseImageDataset):
     """
     dataset_dir = 'Market-1501-v15.09.15'
 
-    def __init__(self, root='', keypoints_dir='', verbose=True, pid_begin = 0, **kwargs):
+    def __init__(self, root='', keypoints_dir='', verbose=False, pid_begin = 0, **kwargs):
         super(Market1501, self).__init__()
         self.dataset_dir = osp.join(root, self.dataset_dir)
         self.keypoints_dir = keypoints_dir

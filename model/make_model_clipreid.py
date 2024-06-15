@@ -28,6 +28,27 @@ def weights_init_classifier(m):
             nn.init.constant_(m.bias, 0.0)
 
 
+class BatchNormVector(nn.Module):
+    """
+    Scale inputs by batch-learnable vector norm
+    """
+    def __init__(self, eps=1e-5, momentum=0.1):
+        super(BatchNormVector, self).__init__()
+        self.eps = eps
+        self.momentum = momentum
+        self.register_buffer('running_norm', torch.tensor(1))
+
+    def forward(self, x):
+        if self.training:
+            batch_norm = torch.norm(x, p=2, dim=-1).mean()
+            self.running_norm = (1 - self.momentum) * self.running_norm + self.momentum * batch_norm
+            norm = batch_norm
+        else:
+            norm = self.running_norm
+        x_hat = x / (norm + self.eps)
+        return x_hat
+
+
 class TextEncoder(nn.Module):
     def __init__(self, clip_model):
         super().__init__()
@@ -104,6 +125,7 @@ class build_transformer(nn.Module):
         clip_model.to("cuda")
 
         self.image_encoder = clip_model.visual
+        self.image_batchnormvec = BatchNormVector()
 
         if cfg.MODEL.SIE_CAMERA and cfg.MODEL.SIE_VIEW:
             self.cv_embed = nn.Parameter(torch.zeros(camera_num * view_num, self.in_planes))
@@ -123,6 +145,7 @@ class build_transformer(nn.Module):
         self.text_encoder = TextEncoder(clip_model)
 
         self.keypoints_encoder = KeypointsEncoder(self.in_planes_proj)
+        self.keypoints_batchnormvec = BatchNormVector()
 
         self.image_keypoints_projector = nn.Linear(2*self.in_planes_proj, self.in_planes_proj)
 
@@ -147,8 +170,8 @@ class build_transformer(nn.Module):
             if keypoints is not None:
                 keypoints /= torch.tensor(x.shape[3:1:-1]).cuda()
                 kps_feature_proj = self.keypoints_encoder(keypoints)
-                img_feature_proj = img_feature_proj / torch.linalg.norm(img_feature_proj, dim=-1, keepdim=True)
-                kps_feature_proj = kps_feature_proj / torch.linalg.norm(kps_feature_proj, dim=-1, keepdim=True)
+                img_feature_proj = self.image_batchnormvec(img_feature_proj)
+                kps_feature_proj = self.keypoints_batchnormvec(kps_feature_proj)
                 img_feature_proj = torch.cat([img_feature_proj, kps_feature_proj], dim=1)
                 img_feature_proj = self.image_keypoints_projector(img_feature_proj)
 

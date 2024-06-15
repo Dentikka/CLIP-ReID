@@ -57,6 +57,10 @@ _C.MODEL.ATT_DROP_RATE = 0.0
 _C.MODEL.TRANSFORMER_TYPE = 'None'
 _C.MODEL.STRIDE_SIZE = [16, 16]
 
+# Pose estimator HRNet setting
+_C.MODEL.HRNET_CFG_PATH = 'td-hm_hrnet-w48_8xb32-210e_coco-256x192.py'
+_C.MODEL.HRNET_PRETRAINED_PATH = 'td-hm_hrnet-w48_8xb32-210e_coco-256x192-0e67c616_20220913.pth'
+
 # SIE Parameter
 _C.MODEL.SIE_COE = 3.0
 _C.MODEL.SIE_CAMERA = False

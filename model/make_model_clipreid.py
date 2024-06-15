@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import numpy as np
+from mmpose.apis import init_model as mmpose_init_model
 from .clip.simple_tokenizer import SimpleTokenizer as _Tokenizer
 _tokenizer = _Tokenizer()
 from timm.models.layers import DropPath, to_2tuple, trunc_normal_
@@ -103,6 +104,8 @@ class build_transformer(nn.Module):
         dataset_name = cfg.DATASETS.NAMES
         self.prompt_learner = PromptLearner(num_classes, dataset_name, clip_model.dtype, clip_model.token_embedding)
         self.text_encoder = TextEncoder(clip_model)
+
+        self.keypoints_encoder = mmpose_init_model(cfg.MODEL.HRNET_CFG_PATH, cfg.MODEL.HRNET_PRETRAINED_PATH)
 
     def forward(self, x = None, label=None, get_image = False, get_text = False, cam_label= None, view_label=None):
         if get_text == True:
